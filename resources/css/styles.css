@@ -1,0 +1,2491 @@
+@import url("https://fonts.googleapis.com/css2?family=Droid+Sans+Mono&display=swap");
+
+/* === DEFAULT (dark) theme variables === */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  /* Main UI */
+  --bg: #1a1e24;
+  --bg-gradient: radial-gradient(circle at top left, #4c5f82, #273852 80%);
+  --panel: #232833;
+  --panel-gradient: linear-gradient(150deg, var(--panel), #1d222c);
+  --panel-soft: #2a303c;
+  --text: #e6e8ec;
+  --muted: #a8b0bf;
+  --accent: #7aa6c2;
+  --accent-2: #9bb3a8;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --radius: 18px;
+  --flip-bg: linear-gradient(180deg, #2d3646 0%, #1c222c 100%);
+  --flip-text: #dfe7f0;
+  --day-today-bg: rgba(122, 166, 194, 0.2);
+  --day-today-text: #eaf2f7;
+  
+  /* Calculator-specific */
+  --calc-bg: #556887;
+  --calc-panel: #333333;
+  --calc-border: #343e4e;
+  --vfd-bg: #0d1110;
+  --vfd-bg-off: #070a0a;
+  --vfd-text: #00ffaa;
+  --vfd-text-dim: rgba(0, 255, 170, 0.7);
+  --vfd-accent: rgba(0, 255, 170, 0.5);
+  --vfd-status-off: #004433;
+  --key-bg-default: #e6e4d5;
+  --key-bg-numeric: #383e45;
+  --key-bg-cyan: #5f8a9e;
+  --key-bg-green: #5d7a72;
+  --key-bg-light-green: #8da39f;
+  --key-bg-gray: #4a4a4a;
+  --key-bg-gray-thumb: #b0b0b0;
+  --key-text-light: #e6e4d5;
+  --key-text-dark: #111;
+  --key-text-cyan: #89cff0;
+  --key-minus-color: #b74040;
+  --led-off: #300;
+  --led-on: #ff3300;
+  --led-glow: rgba(255, 50, 0, 0.8);
+  --switch-track: #222;
+  --switch-thumb: #e0e0dc;
+  --switch-label: #888;
+  --switch-ticks: #bbb;
+  --paper-bg: #556887;
+  --paper-tape-bg: #fdfae7;
+  --paper-ink: #2a2a2a;
+  
+  /* Calc-sheet specific */
+  --sheet-bg: #f3eac8;
+  --sheet-cell: #f7f0d6;
+  --sheet-grid: rgba(60, 52, 35, 0.22);
+  --sheet-text: #3a3526;
+  --sheet-header: #e9dfb8;
+  --sheet-header-text: #2d2a20;
+  --sheet-toolbar-bg: #efe4bf;
+  --sheet-toolbar-border: rgba(60, 52, 35, 0.25);
+  --sheet-toolbar-text: #3a3526;
+  --sheet-formula-bg: #f6eed1;
+  --sheet-formula-text: #3a3526;
+  --sheet-formula-border: rgba(60, 52, 35, 0.2);
+  --sheet-tool-bg: #f6eecf;
+  --sheet-tool-border: rgba(60, 52, 35, 0.3);
+  --sheet-tool-text: #2d2a20;
+  --sheet-tool-active-bg: #fff3c6;
+  --sheet-tool-active-border: rgba(138, 110, 40, 0.6);
+  --sheet-cell-focus-outline: rgba(138, 110, 40, 0.6);
+  --sheet-cell-focus-bg: #fff6d8;
+  --sheet-cell-active-bg: #fff6d8;
+  --sheet-cell-active-shadow: rgba(138, 110, 40, 0.45);
+  --sheet-cell-selected-bg: #fff1c7;
+  --sheet-cell-selected-shadow: rgba(138, 110, 40, 0.35);
+  --sheet-cell-formula-bg: #efe1b0;
+  --sheet-cell-corner-bg: #e1d6aa;
+  --sheet-cell-caret-color: #2d2a20;
+  --sheet-save-indicator-bg: rgba(58, 53, 38, 0.25);
+  --sheet-save-indicator-border: rgba(60, 52, 35, 0.3);
+  --sheet-save-indicator-active-bg: #7f5b11;
+  --sheet-save-indicator-active-shadow: rgba(127, 91, 17, 0.2);
+  --sheet-formula-empty-text: rgba(58, 53, 38, 0.55);
+  --sheet-context-menu-bg: #f6eecf;
+  --sheet-context-menu-border: rgba(60, 52, 35, 0.3);
+  --sheet-context-menu-text: #3a3526;
+  --sheet-context-menu-shadow: rgba(28, 26, 18, 0.2);
+  --sheet-context-menu-btn-hover: #fff3c6;
+  --sheet-note-text: rgba(58, 53, 38, 0.7);
+  --sheet-grid-shadow: rgba(255, 255, 255, 0.35);
+  
+  /* Tape/Paper text (consistent with dark theme) */
+  --tape-text: #444;
+  --tape-symbol-color: #444;
+  --tape-percent-color: #9a9a9a;
+  --tape-negative-color: #cc0000;
+  --tape-result-text: #444;
+  
+  /* Scrollbar styling */
+  --scrollbar-track-bg: rgba(0, 0, 0, 0.05);
+  --scrollbar-thumb-bg: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb-hover-bg: rgba(0, 0, 0, 0.3);
+  
+  /* History container */
+  --history-container-bg: #272f47;
+  
+  /* Moon & Calendar */
+  --moon-title-color: #cbd2db;
+  --moon-phase-color: #b8d4f3;
+  --calendar-context-menu-bg: #101820;
+  --calendar-context-menu-text: #e7f0f6;
+  --calendar-context-menu-border: rgba(122, 166, 194, 0.35);
+  --calendar-context-menu-header-text: #e7f0f6;
+  --calendar-context-menu-divider: rgba(122, 166, 194, 0.25);
+  --calendar-context-menu-btn-hover: rgba(122, 166, 194, 0.18);
+  
+  /* Trading Links */
+  --trading-bg: #101319;
+  --trading-link-bg: rgba(32, 38, 48, 0.9);
+  --trading-link-text: #dfe7f0;
+  --trading-link-border: rgba(255, 255, 255, 0.08);
+  --trading-link-hover-bg: rgba(40, 48, 60, 0.95);
+  --trading-link-hover-border: rgba(122, 166, 194, 0.5);
+  
+  /* FX Status */
+  --fx-status-color: #9bb3a8;
+  --fx-status-cached-color: #a8b0bf;
+  --fx-change-negative-color: #d7a3a3;
+  --fx-text-color: #dfe7f0;
+  --fx-title-color: #dfe7f0;
+}
+
+/* === Light theme === */
+[data-theme="light"] {
+  color-scheme: light;
+  /* Main UI */
+  --bg: #e8ecf0;
+  --bg-gradient: linear-gradient(135deg, #dce3ea, #f0f2f5 80%);
+  --panel: #ffffff;
+  --panel-gradient: linear-gradient(150deg, #ffffff, #f5f6f8);
+  --panel-soft: #eef0f4;
+  --text: #1a1e24;
+  --muted: #5a6478;
+  --accent: #3a7db8;
+  --accent-2: #4e8a72;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --flip-bg: linear-gradient(180deg, #e8ecf0 0%, #d4dae2 100%);
+  --flip-text: #1a1e24;
+  --day-today-bg: rgba(58, 125, 184, 0.15);
+  --day-today-text: #1a3050;
+  
+  /* Calculator-specific */
+  --calc-bg: #d0dde8;
+  --calc-panel: #e8ecf0;
+  --calc-border: #b8c5d6;
+  --vfd-bg: #f5f5f0;
+  --vfd-bg-off: #e8e8e0;
+  --vfd-text: #006633;
+  --vfd-text-dim: rgba(0, 102, 51, 0.7);
+  --vfd-accent: rgba(0, 102, 51, 0.4);
+  --vfd-status-off: #ccccaa;
+  --key-bg-default: #e6e4d5;
+  --key-bg-numeric: #606868;
+  --key-bg-cyan: #7da8b8;
+  --key-bg-green: #808080;
+  --key-bg-light-green: #a8a8a8;
+  --key-bg-gray: #b8b8b8;
+  --key-bg-gray-thumb: #e8e8e8;
+  --key-text-light: #f0f0f0;
+  --key-text-dark: #333;
+  --key-text-cyan: #d8f0ff;
+  --key-minus-color: #cc0000;
+  --led-off: #cc9999;
+  --led-on: #ff6600;
+  --led-glow: rgba(255, 102, 0, 0.8);
+  --switch-track: #cccccc;
+  --switch-thumb: #555555;
+  --switch-label: #666;
+  --switch-ticks: #666;
+  --paper-bg: #d0dde8;
+  --paper-tape-bg: #f5f5f0;
+  --paper-ink: #333333;
+  
+  /* Calc-sheet specific */
+  --sheet-bg: #ffffff;
+  --sheet-cell: #f9f8f5;
+  --sheet-grid: rgba(40, 35, 20, 0.15);
+  --sheet-text: #2a2520;
+  --sheet-header: #ece5d0;
+  --sheet-header-text: #1a1510;
+  --sheet-toolbar-bg: #f5f0e0;
+  --sheet-toolbar-border: rgba(40, 35, 20, 0.18);
+  --sheet-toolbar-text: #2a2520;
+  --sheet-formula-bg: #fef9ed;
+  --sheet-formula-text: #2a2520;
+  --sheet-formula-border: rgba(40, 35, 20, 0.12);
+  --sheet-tool-bg: #f8f3e5;
+  --sheet-tool-border: rgba(40, 35, 20, 0.2);
+  --sheet-tool-text: #1a1510;
+  --sheet-tool-active-bg: #fffae0;
+  --sheet-tool-active-border: rgba(100, 80, 30, 0.5);
+  --sheet-cell-focus-outline: rgba(100, 80, 30, 0.5);
+  --sheet-cell-focus-bg: #fffbf0;
+  --sheet-cell-active-bg: #fffbf0;
+  --sheet-cell-active-shadow: rgba(100, 80, 30, 0.35);
+  --sheet-cell-selected-bg: #fffae0;
+  --sheet-cell-selected-shadow: rgba(100, 80, 30, 0.25);
+  --sheet-cell-formula-bg: #f8f3dc;
+  --sheet-cell-corner-bg: #ede5c8;
+  --sheet-cell-caret-color: #1a1510;
+  --sheet-save-indicator-bg: rgba(40, 35, 25, 0.2);
+  --sheet-save-indicator-border: rgba(40, 35, 20, 0.2);
+  --sheet-save-indicator-active-bg: #b8860b;
+  --sheet-save-indicator-active-shadow: rgba(184, 134, 11, 0.18);
+  --sheet-formula-empty-text: rgba(40, 35, 25, 0.5);
+  --sheet-context-menu-bg: #fef9ed;
+  --sheet-context-menu-border: rgba(40, 35, 20, 0.2);
+  --sheet-context-menu-text: #2a2520;
+  --sheet-context-menu-shadow: rgba(20, 15, 5, 0.12);
+  --sheet-context-menu-btn-hover: #fffae0;
+  --sheet-note-text: rgba(40, 35, 25, 0.6);
+  --sheet-grid-shadow: rgba(0, 0, 0, 0.04);
+  
+  /* Tape/Paper text (consistent with dark theme, but lighter for light theme) */
+  --tape-text: #333;
+  --tape-symbol-color: #333;
+  --tape-percent-color: #888;
+  --tape-negative-color: #cc0000;
+  --tape-result-text: #333;
+  
+  /* Scrollbar styling */
+  --scrollbar-track-bg: rgba(0, 0, 0, 0.04);
+  --scrollbar-thumb-bg: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb-hover-bg: rgba(0, 0, 0, 0.3);
+  
+  /* History container */
+  --history-container-bg: #e0e5ed;
+  
+  /* Moon & Calendar */
+  --moon-title-color: #4a5a6a;
+  --moon-phase-color: #3a6aa8;
+  --calendar-context-menu-bg: #f5f8fc;
+  --calendar-context-menu-text: #1a3050;
+  --calendar-context-menu-border: rgba(58, 125, 184, 0.3);
+  --calendar-context-menu-header-text: #1a2840;
+  --calendar-context-menu-divider: rgba(58, 125, 184, 0.2);
+  --calendar-context-menu-btn-hover: rgba(58, 125, 184, 0.12);
+  
+  /* Trading Links */
+  --trading-bg: #e8ecf0;
+  --trading-link-bg: rgba(200, 220, 240, 0.6);
+  --trading-link-text: #1a3050;
+  --trading-link-border: rgba(58, 125, 184, 0.2);
+  --trading-link-hover-bg: rgba(180, 210, 240, 0.8);
+  --trading-link-hover-border: rgba(58, 125, 184, 0.4);
+  
+  /* FX Status */
+  --fx-status-color: #3a7db8;
+  --fx-status-cached-color: #5a6478;
+  --fx-change-negative-color: #a85050;
+  --fx-text-color: #1a3050;
+  --fx-title-color: #1a3050;
+}
+
+/* === AMOLED theme === */
+[data-theme="amoled"] {
+  color-scheme: dark;
+  /* Main UI */
+  --bg: #000000;
+  --bg-gradient: none;
+  --panel: #0a0a0a;
+  --panel-gradient: none;
+  --panel-soft: #141414;
+  --text: #e0e0e0;
+  --muted: #777;
+  --accent: #4fc3f7;
+  --accent-2: #81c784;
+  --shadow: rgba(0, 0, 0, 0.6);
+  --flip-bg: linear-gradient(180deg, #111 0%, #000 100%);
+  --flip-text: #e0e0e0;
+  --day-today-bg: rgba(79, 195, 247, 0.2);
+  --day-today-text: #b3e5fc;
+  
+  /* Calculator-specific */
+  --calc-bg: #000;
+  --calc-panel: #0a0a0a;
+  --calc-border: #1a1a1a;
+  --vfd-bg: #000;
+  --vfd-bg-off: #000;
+  --vfd-text: #00ffaa;
+  --vfd-text-dim: rgba(0, 255, 170, 0.7);
+  --vfd-accent: rgba(0, 255, 170, 0.5);
+  --vfd-status-off: #003300;
+  --key-bg-default: #1a1a1a;
+  --key-bg-numeric: #222;
+  --key-bg-cyan: #1a3a4a;
+  --key-bg-green: #1a2a22;
+  --key-bg-light-green: #2a3a32;
+  --key-bg-gray: #2a2a2a;
+  --key-bg-gray-thumb: #555;
+  --key-text-light: #e0e0e0;
+  --key-text-dark: #000;
+  --key-text-cyan: #88ddff;
+  --key-minus-color: #ff6666;
+  --led-off: #200;
+  --led-on: #ff3300;
+  --led-glow: rgba(255, 50, 0, 0.8);
+  --switch-track: #0a0a0a;
+  --switch-thumb: #333;
+  --switch-label: #666;
+  --switch-ticks: #666;
+  --paper-bg: #000;
+  --paper-tape-bg: #0a0a0a;
+  --paper-ink: #e0e0e0;
+  
+  /* Calc-sheet specific */
+  --sheet-bg: #0a0a0a;
+  --sheet-cell: #141414;
+  --sheet-grid: rgba(100, 255, 100, 0.08);
+  --sheet-text: #e0e0e0;
+  --sheet-header: #1a1a1a;
+  --sheet-header-text: #00ff88;
+  --sheet-toolbar-bg: #0f0f0f;
+  --sheet-toolbar-border: rgba(100, 255, 100, 0.1);
+  --sheet-toolbar-text: #d0d0d0;
+  --sheet-formula-bg: #1a1a1a;
+  --sheet-formula-text: #e0e0e0;
+  --sheet-formula-border: rgba(100, 255, 100, 0.08);
+  --sheet-tool-bg: #1a1a1a;
+  --sheet-tool-border: rgba(100, 255, 100, 0.12);
+  --sheet-tool-text: #b0b0b0;
+  --sheet-tool-active-bg: #0f2f0f;
+  --sheet-tool-active-border: rgba(100, 255, 100, 0.4);
+  --sheet-cell-focus-outline: rgba(100, 255, 100, 0.4);
+  --sheet-cell-focus-bg: #1a2a1a;
+  --sheet-cell-active-bg: #1a2a1a;
+  --sheet-cell-active-shadow: rgba(100, 255, 100, 0.25);
+  --sheet-cell-selected-bg: #0f2f0f;
+  --sheet-cell-selected-shadow: rgba(100, 255, 100, 0.15);
+  --sheet-cell-formula-bg: #1a2520;
+  --sheet-cell-corner-bg: #151f15;
+  --sheet-cell-caret-color: #00dd77;
+  --sheet-save-indicator-bg: rgba(100, 255, 100, 0.1);
+  --sheet-save-indicator-border: rgba(100, 255, 100, 0.15);
+  --sheet-save-indicator-active-bg: #00ff88;
+  --sheet-save-indicator-active-shadow: rgba(0, 255, 136, 0.2);
+  --sheet-formula-empty-text: rgba(200, 200, 200, 0.5);
+  --sheet-context-menu-bg: #1a1a1a;
+  --sheet-context-menu-border: rgba(100, 255, 100, 0.12);
+  --sheet-context-menu-text: #d0d0d0;
+  --sheet-context-menu-shadow: rgba(0, 0, 0, 0.6);
+  --sheet-context-menu-btn-hover: #0f2f0f;
+  --sheet-note-text: rgba(180, 180, 180, 0.6);
+  --sheet-grid-shadow: rgba(100, 255, 100, 0.06);
+  
+  /* Tape/Paper text (consistent with dark theme) */
+  --tape-text: #e0e0e0;
+  --tape-symbol-color: #e0e0e0;
+  --tape-percent-color: #a0a0a0;
+  --tape-negative-color: #ff6666;
+  --tape-result-text: #e0e0e0;
+  
+  /* Scrollbar styling */
+  --scrollbar-track-bg: rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb-bg: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover-bg: rgba(255, 255, 255, 0.25);
+  
+  /* History container */
+  --history-container-bg: #151515;
+  
+  /* Moon & Calendar */
+  --moon-title-color: #00ff88;
+  --moon-phase-color: #00ddbb;
+  --calendar-context-menu-bg: #0f0f0f;
+  --calendar-context-menu-text: #00ff88;
+  --calendar-context-menu-border: rgba(0, 255, 136, 0.2);
+  --calendar-context-menu-header-text: #00ff88;
+  --calendar-context-menu-divider: rgba(0, 255, 136, 0.15);
+  --calendar-context-menu-btn-hover: rgba(0, 255, 136, 0.1);
+  
+  /* Trading Links */
+  --trading-bg: #0a0a0a;
+  --trading-link-bg: rgba(0, 50, 40, 0.5);
+  --trading-link-text: #00ff88;
+  --trading-link-border: rgba(0, 255, 136, 0.15);
+  --trading-link-hover-bg: rgba(0, 80, 60, 0.6);
+  --trading-link-hover-border: rgba(0, 255, 136, 0.3);
+  
+  /* FX Status */
+  --fx-status-color: #00ff88;
+  --fx-status-cached-color: #888;
+  --fx-change-negative-color: #ff8888;
+  --fx-text-color: #e0e0e0;
+  --fx-title-color: #e0e0e0;
+}
+
+/* === Mac 1990 theme: Minimalist pixelated aesthetic === */
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+[data-theme="mac1990"] {
+  color-scheme: light;
+  /* Main UI: Silver/Gray palette with subtle gradients */
+  --bg: #e0e0e0;
+  --bg-gradient: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+  --panel: #e8e8e8;
+  --panel-gradient: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+  --panel-soft: #dcdcdc;
+  --text: #222222;
+  --muted: #666666;
+  --accent: #0066cc;
+  --accent-2: #00aa00;
+  --shadow: rgba(0, 0, 0, 0.15);
+  --radius: 4px;
+  --flip-bg: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+  --flip-text: #222;
+  --day-today-bg: rgba(0, 102, 204, 0.12);
+  --day-today-text: #004488;
+  
+  /* Calculator-specific: Minimal pixelated style */
+  --calc-bg: #c0c0c0;
+  --calc-panel: #dfdfdf;
+  --calc-border: #808080;
+  --vfd-bg: #c0c0c0;
+  --vfd-bg-off: #b8b8b8;
+  --vfd-text: #004488;
+  --vfd-text-dim: rgba(0, 68, 136, 0.6);
+  --vfd-accent: rgba(0, 68, 136, 0.3);
+  --vfd-status-off: #888888;
+  --key-bg-default: #dfdfdf;
+  --key-bg-numeric: #c0c0c0;
+  --key-bg-cyan: #a8a8a8;
+  --key-bg-green: #a8a8a8;
+  --key-bg-light-green: #b8b8b8;
+  --key-bg-gray: #dfdfdf;
+  --key-bg-gray-thumb: #c0c0c0;
+  --key-text-light: #dfdfdf;
+  --key-text-dark: #222;
+  --key-text-cyan: #004488;
+  --key-minus-color: #880000;
+  --led-off: #cccccc;
+  --led-on: #ff6600;
+  --led-glow: rgba(255, 102, 0, 0.6);
+  --switch-track: #c0c0c0;
+  --switch-thumb: #808080;
+  --switch-label: #333;
+  --switch-ticks: #555;
+  --paper-bg: #c0c0c0;
+  --paper-tape-bg: #f5f5f0;
+  --paper-ink: #222;
+  
+  /* Calc-sheet specific */
+  --sheet-bg: #e8e8e8;
+  --sheet-cell: #f0f0f0;
+  --sheet-grid: rgba(100, 100, 100, 0.18);
+  --sheet-text: #222;
+  --sheet-header: #d0d0d0;
+  --sheet-header-text: #000;
+  --sheet-toolbar-bg: #e0e0e0;
+  --sheet-toolbar-border: rgba(100, 100, 100, 0.2);
+  --sheet-toolbar-text: #222;
+  --sheet-formula-bg: #f5f5f5;
+  --sheet-formula-text: #222;
+  --sheet-formula-border: rgba(100, 100, 100, 0.15);
+  --sheet-tool-bg: #efefef;
+  --sheet-tool-border: rgba(100, 100, 100, 0.18);
+  --sheet-tool-text: #333;
+  --sheet-tool-active-bg: #ffffff;
+  --sheet-tool-active-border: rgba(0, 102, 204, 0.5);
+  --sheet-cell-focus-outline: rgba(0, 102, 204, 0.5);
+  --sheet-cell-focus-bg: #fafafa;
+  --sheet-cell-active-bg: #fafafa;
+  --sheet-cell-active-shadow: rgba(0, 102, 204, 0.3);
+  --sheet-cell-selected-bg: #f5f5f5;
+  --sheet-cell-selected-shadow: rgba(0, 102, 204, 0.2);
+  --sheet-cell-formula-bg: #ebebeb;
+  --sheet-cell-corner-bg: #dcdcdc;
+  --sheet-cell-caret-color: #000;
+  --sheet-save-indicator-bg: rgba(100, 100, 100, 0.15);
+  --sheet-save-indicator-border: rgba(100, 100, 100, 0.18);
+  --sheet-save-indicator-active-bg: #0066cc;
+  --sheet-save-indicator-active-shadow: rgba(0, 102, 204, 0.15);
+  --sheet-formula-empty-text: rgba(100, 100, 100, 0.5);
+  --sheet-context-menu-bg: #f5f5f5;
+  --sheet-context-menu-border: rgba(100, 100, 100, 0.18);
+  --sheet-context-menu-text: #222;
+  --sheet-context-menu-shadow: rgba(0, 0, 0, 0.1);
+  --sheet-context-menu-btn-hover: #ffffff;
+  --sheet-note-text: rgba(100, 100, 100, 0.6);
+  --sheet-grid-shadow: rgba(255, 255, 255, 0.6);
+  
+  /* Tape/Paper text (consistent with dark theme but lighter) */
+  --tape-text: #222;
+  --tape-symbol-color: #222;
+  --tape-percent-color: #666;
+  --tape-negative-color: #880000;
+  --tape-result-text: #222;
+  
+  /* Scrollbar styling */
+  --scrollbar-track-bg: rgba(0, 0, 0, 0.05);
+  --scrollbar-thumb-bg: rgba(0, 0, 0, 0.25);
+  --scrollbar-thumb-hover-bg: rgba(0, 0, 0, 0.35);
+  
+  /* History container */
+  --history-container-bg: #d8d8d8;
+  
+  /* Moon & Calendar */
+  --moon-title-color: #004488;
+  --moon-phase-color: #0066cc;
+  --calendar-context-menu-bg: #efefef;
+  --calendar-context-menu-text: #222;
+  --calendar-context-menu-border: rgba(0, 102, 204, 0.25);
+  --calendar-context-menu-header-text: #000;
+  --calendar-context-menu-divider: rgba(0, 102, 204, 0.15);
+  --calendar-context-menu-btn-hover: rgba(0, 102, 204, 0.1);
+  
+  /* Trading Links */
+  --trading-bg: #e0e0e0;
+  --trading-link-bg: rgba(200, 200, 200, 0.6);
+  --trading-link-text: #222;
+  --trading-link-border: rgba(0, 102, 204, 0.18);
+  --trading-link-hover-bg: rgba(180, 180, 180, 0.8);
+  --trading-link-hover-border: rgba(0, 102, 204, 0.35);
+  
+  /* FX Status */
+  --fx-status-color: #0066cc;
+  --fx-status-cached-color: #666;
+  --fx-change-negative-color: #aa4444;
+  --fx-text-color: #222;
+  --fx-title-color: #222;
+}
+
+/* === Macintosh 1984 Theme: Pure B&W, stippling, 2px borders === */
+[data-theme="mac1984"] {
+  color-scheme: light;
+  
+  /* Main UI: High Contrast B&W */
+  --bg: #ffffff;
+  --stipple: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQImWMQFBRkYGBgYWBgYAAABAAEAOnpY94AAAAASUVORK5CYII=");
+  --bg-gradient: var(--stipple);
+  --panel: #ffffff;
+  --panel-gradient: none;
+  --panel-soft: #ffffff;
+  --text: #000000;
+  --muted: #444444;
+  --accent: #000000;
+  --accent-2: #000000;
+  --shadow: none;
+  --radius: 0px;
+  --flip-bg: #ffffff;
+  --flip-text: #000000;
+  --day-today-bg: transparent;
+  --day-today-text: #000000;
+  
+  /* Overrides for Mac1984 specific highlights */
+  --calendar-today-outline: 3px solid #000;
+  --calendar-today-bg: var(--stipple);
+  
+  /* Calculator-specific: Classic System 1 Look */
+  --calc-bg: #ffffff;
+  --calc-panel: #ffffff;
+  --calc-border: #000000;
+  --vfd-bg: #ffffff;
+  --vfd-bg-off: #ffffff;
+  --vfd-text: #000000;
+  --vfd-text-dim: rgba(0, 0, 0, 0.4);
+  --vfd-accent: rgba(0, 0, 0, 0.2);
+  --vfd-status-off: #888888;
+  --key-bg-default: #ffffff;
+  --key-bg-numeric: #ffffff;
+  --key-bg-cyan: #ffffff;
+  --key-bg-green: #ffffff;
+  --key-bg-light-green: #ffffff;
+  --key-bg-gray: #ffffff;
+  --key-bg-gray-thumb: #ffffff;
+  --key-text-light: #000000;
+  --key-text-dark: #000000;
+  --key-text-cyan: #000000;
+  --key-minus-color: #000000;
+  --led-off: #ffffff;
+  --led-on: #000000;
+  --led-glow: none;
+  --switch-track: #000000;
+  --switch-thumb: #ffffff;
+  --switch-label: #000;
+  --switch-ticks: #000;
+  --paper-bg: #ffffff;
+  --paper-tape-bg: #ffffff;
+  --paper-ink: #000000;
+  
+  /* Calc-sheet specific */
+  --sheet-bg: #ffffff;
+  --sheet-cell: #ffffff;
+  --sheet-grid: #000000;
+  --sheet-text: #000000;
+  --sheet-header: #ffffff;
+  --sheet-header-text: #000000;
+  --sheet-toolbar-bg: #ffffff;
+  --sheet-toolbar-border: #000000;
+  --sheet-toolbar-text: #000000;
+  --sheet-formula-bg: #ffffff;
+  --sheet-formula-text: #000000;
+  --sheet-formula-border: #000000;
+  --sheet-tool-bg: #ffffff;
+  --sheet-tool-border: #000000;
+  --sheet-tool-text: #000000;
+  --sheet-tool-active-bg: #000000;
+  --sheet-tool-active-border: #000000;
+  --sheet-cell-focus-outline: 2px solid #000;
+  --sheet-cell-focus-bg: #ffffff;
+  --sheet-cell-active-bg: var(--stipple);
+  --sheet-cell-active-shadow: none;
+  --sheet-cell-selected-bg: var(--stipple);
+  --sheet-cell-selected-shadow: none;
+  --sheet-cell-formula-bg: #ffffff;
+  --sheet-cell-corner-bg: #ffffff;
+  --sheet-cell-caret-color: #000000;
+  --sheet-save-indicator-bg: #ffffff;
+  --sheet-save-indicator-border: #000000;
+  --sheet-save-indicator-active-bg: #000000;
+  --sheet-save-indicator-active-shadow: none;
+  --sheet-formula-empty-text: #666;
+  --sheet-context-menu-bg: #ffffff;
+  --sheet-context-menu-border: 2px solid #000;
+  --sheet-context-menu-text: #000;
+  --sheet-context-menu-shadow: 4px 4px 0px #000;
+  --sheet-context-menu-btn-hover: var(--stipple);
+  --sheet-note-text: #444;
+  --sheet-grid-shadow: none;
+  
+  /* Tape/Paper text */
+  --tape-text: #000;
+  --tape-symbol-color: #000;
+  --tape-percent-color: #000;
+  --tape-negative-color: #000;
+  --tape-result-text: #000;
+  
+  /* Scrollbar styling */
+  --scrollbar-track-bg: var(--stipple);
+  --scrollbar-thumb-bg: #ffffff;
+  --scrollbar-thumb-hover-bg: #000000;
+  
+  /* History container */
+  --history-container-bg: #ffffff;
+  
+  /* Moon & Calendar */
+  --moon-title-color: #000000;
+  --moon-phase-color: #000000;
+  --calendar-context-menu-bg: #ffffff;
+  --calendar-context-menu-text: #000000;
+  --calendar-context-menu-border: 2px solid #000000;
+  --calendar-context-menu-header-text: #000000;
+  --calendar-context-menu-divider: 1px solid #000000;
+  --calendar-context-menu-btn-hover: var(--stipple);
+  
+  /* Trading Links */
+  --trading-bg: #ffffff;
+  --trading-link-bg: #ffffff;
+  --trading-link-text: #000000;
+  --trading-link-border: 1px solid #000000;
+  --trading-link-hover-bg: var(--stipple);
+  --trading-link-hover-border: 2px solid #000000;
+  
+  /* FX Status */
+  --fx-status-color: #000000;
+  --fx-status-cached-color: #666666;
+  --fx-change-negative-color: #000000;
+  --fx-text-color: #000000;
+  --fx-title-color: #000000;
+}
+
+/* === Amiga Workbench Theme: Classic Blue, Orange, and White (Workbench 1.3 inspired) === */
+[data-theme="amiga"] {
+  color-scheme: dark;
+  
+  /* Main UI: High-contrast Blue and White */
+  --bg: #0055AA;
+  --bg-gradient: none;
+  --panel: #0055AA;
+  --panel-gradient: none;
+  --panel-soft: #004499;
+  --text: #FFFFFF;
+  --muted: #AAAAAA;
+  --accent: #FF8800; /* Classic Amiga Orange */
+  --accent-2: #FFFFFF;
+  --shadow: none;
+  --radius: 0px;
+  --border-width: 2px;
+  --flip-bg: #004499;
+  --flip-text: #FFFFFF;
+  --day-today-bg: #FF8800;
+  --day-today-text: #FFFFFF;
+  
+  /* Calculator-specific */
+  --calc-bg: #0055AA;
+  --calc-panel: #0055AA;
+  --calc-border: #FFFFFF;
+  --vfd-bg: #000000;
+  --vfd-bg-off: #002244;
+  --vfd-text: #FF8800;
+  --vfd-text-dim: #995500;
+  --vfd-accent: rgba(255, 136, 0, 0.5);
+  --vfd-status-off: #004488;
+  --key-bg-default: #0055AA;
+  --key-bg-numeric: #004488;
+  --key-bg-cyan: #0055AA;
+  --key-bg-green: #0055AA;
+  --key-bg-light-green: #0055AA;
+  --key-bg-gray: #0055AA;
+  --key-bg-gray-thumb: #004488;
+  --key-text-light: #FFFFFF;
+  --key-text-dark: #FFFFFF;
+  --key-text-cyan: #FFFFFF;
+  --key-minus-color: #FFFFFF;
+  --led-off: #003366;
+  --led-on: #FF8800;
+  --led-glow: rgba(255, 136, 0, 0.6);
+  --switch-track: #000000;
+  --switch-thumb: #FFFFFF;
+  --switch-label: #FFFFFF;
+  --switch-ticks: #FFFFFF;
+  --paper-bg: #0055AA;
+  --paper-tape-bg: #0055AA;
+  --paper-ink: #FFFFFF;
+  
+  /* Calc-sheet specific */
+  --sheet-bg: #0055AA;
+  --sheet-cell: #b1cbe6;
+  --sheet-grid: #FFFFFF;
+  --sheet-text: #16191c;
+  --sheet-header: #004499;
+  --sheet-header-text: #FFFFFF;
+  --sheet-toolbar-bg: #0055AA;
+  --sheet-toolbar-border: #FFFFFF;
+  --sheet-toolbar-text: #FFFFFF;
+  --sheet-formula-bg: #004499;
+  --sheet-formula-text: #FFFFFF;
+  --sheet-formula-border: #FFFFFF;
+  --sheet-tool-bg: #004499;
+  --sheet-tool-border: #FFFFFF;
+  --sheet-tool-text: #FFFFFF;
+  --sheet-tool-active-bg: #FF8800;
+  --sheet-tool-active-border: #FFFFFF;
+  --sheet-cell-focus-outline: #FF8800;
+  --sheet-cell-focus-bg: #73a2d1;
+  --sheet-cell-active-bg: #FF8800;
+  --sheet-cell-active-shadow: none;
+  --sheet-cell-selected-bg: #004499;
+  --sheet-cell-selected-shadow: none;
+  --sheet-cell-formula-bg: #AAAAAA;
+  --sheet-cell-corner-bg: #004499;
+  --sheet-cell-caret-color: #FFFFFF;
+  --sheet-save-indicator-bg: #004499;
+  --sheet-save-indicator-border: #FFFFFF;
+  --sheet-save-indicator-active-bg: #FF8800;
+  --sheet-save-indicator-active-shadow: none;
+  --sheet-formula-empty-text: #AAAAAA;
+  --sheet-context-menu-bg: #0055AA;
+  --sheet-context-menu-border: 2px solid #FFFFFF;
+  --sheet-context-menu-text: #FFFFFF;
+  --sheet-context-menu-shadow: 4px 4px #000000;
+  --sheet-context-menu-btn-hover: #FF8800;
+  --sheet-note-text: #AAAAAA;
+  --sheet-grid-shadow: none;
+  
+  /* Tape/Paper text */
+  --tape-text: #FFFFFF;
+  --tape-symbol-color: #FFFFFF;
+  --tape-percent-color: #FFFFFF;
+  --tape-negative-color: #FF8800;
+  --tape-result-text: #FFFFFF;
+  
+  /* Scrollbar styling */
+  --scrollbar-track-bg: #004488;
+  --scrollbar-thumb-bg: #FFFFFF;
+  --scrollbar-thumb-hover-bg: #FF8800;
+  
+  /* History container */
+  --history-container-bg: #004488;
+  
+  /* Moon & Calendar */
+  --moon-title-color: #FFFFFF;
+  --moon-phase-color: #FF8800;
+  --calendar-context-menu-bg: #0055AA;
+  --calendar-context-menu-text: #FFFFFF;
+  --calendar-context-menu-border: 2px solid #FFFFFF;
+  --calendar-context-menu-header-text: #FF8800;
+  --calendar-context-menu-divider: 1px solid #FFFFFF;
+  --calendar-context-menu-btn-hover: #FF8800;
+  
+  /* Trading Links */
+  --trading-bg: #0055AA;
+  --trading-link-bg: #004488;
+  --trading-link-text: #FFFFFF;
+  --trading-link-border: 1px solid #FFFFFF;
+  --trading-link-hover-bg: #FF8800;
+  --trading-link-hover-border: 2px solid #FFFFFF;
+  
+  /* FX Status */
+  --fx-status-color: #FFFFFF;
+  --fx-status-cached-color: #AAAAAA;
+  --fx-change-negative-color: #FF8800;
+  --fx-text-color: #FFFFFF;
+  --fx-title-color: #FFFFFF;
+}
+
+[data-theme="mac1984"] .panel {
+  border: 1px solid #000;
+  box-shadow: 2px 2px 0px #000;
+}
+
+[data-theme="mac1984"] .time-panel,
+[data-theme="mac1984"] .status-header,
+[data-theme="mac1984"] .calc-sheet-toolbar,
+[data-theme="mac1984"] .calc-header {
+  border-bottom: 2px solid #000;
+  background-image: linear-gradient(to bottom, #000 1px, transparent 1px, transparent 2px);
+  background-size: 100% 2px;
+  background-color: #fff;
+}
+
+[data-theme="mac1984"] .month-card.current-month {
+  box-shadow: inset 0 0 0 2px #000 !important;
+  background-color: #fff;
+}
+
+[data-theme="mac1984"] .day.today {
+  outline: 2px solid #000;
+  background: var(--stipple) !important;
+}
+
+[data-theme="mac1984"] .calc-btn {
+  border: 1px solid #000 !important;
+  border-radius: 4px !important;
+  box-shadow: 1px 1px 0px #000 !important;
+  background: #fff !important;
+  color: #000 !important;
+}
+
+[data-theme="mac1984"] .calc-btn:active {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+[data-theme="mac1984"] .calc-vfd {
+  border: 2px solid #000 !important;
+  box-shadow: inset 2px 2px 0px rgba(0,0,0,0.1);
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+[data-theme="mac1984"] .vfd-text,
+[data-theme="mac1984"] .vfd-stack-item {
+  color: #000 !important;
+  text-shadow: none !important;
+  font-family: 'Geneva', sans-serif !important;
+}
+
+[data-theme="mac1984"] .calc-body {
+  background: #fff !important;
+  border: 2px solid #000 !important;
+  box-shadow: 4px 4px 0px #000 !important;
+  border-bottom: 2px solid #000 !important;
+  border-radius: 0 !important;
+}
+
+[data-theme="mac1984"] .focus-led {
+  display: none;
+}
+
+[data-theme="mac1984"] .calc-paper-tape {
+  border: 2px solid #000 !important;
+  box-shadow: 2px 2px 0px #000 !important;
+  border-radius: 0 !important;
+}
+
+[data-theme="mac1984"] .month-card {
+  border: 1px solid #000;
+  border-radius: 0;
+}
+
+[data-theme="mac1984"] .month-title {
+  background-image: linear-gradient(to bottom, #000 1px, transparent 1px, transparent 2px);
+  background-size: 100% 2px;
+  border-bottom: 1px solid #000;
+  color: #000;
+  padding: 4px;
+}
+
+[data-theme="mac1984"] .month-title span {
+  background: #fff;
+  padding: 0 4px;
+}
+
+[data-theme="mac1984"] .nav-indicator {
+  background: #fff !important;
+  border: 1px solid #000;
+  color: #000;
+}
+
+[data-theme="mac1984"] .calendar-view-toggle {
+  background: #fff !important;
+  border: 1px solid #000 !important;
+  box-shadow: 2px 2px 0px #000 !important;
+  border-radius: 0 !important;
+}
+
+[data-theme="mac1984"] .calc-dialog {
+  border: 1px solid #000 !important;
+  box-shadow: 4px 4px 0px #000 !important;
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+  background: #fff !important;
+}
+
+[data-theme="mac1984"] .calc-dialog-btn {
+  border: 1px solid #000 !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  color: #000 !important;
+  box-shadow: 1px 1px 0px #000 !important;
+}
+
+[data-theme="mac1984"] .calc-dialog-btn:hover {
+  background: var(--stipple) !important;
+}
+
+[data-theme="mac1984"] .calc-dialog-btn.primary {
+  background: #000 !important;
+  color: #fff !important;
+  box-shadow: 2px 2px 0px #000 !important;
+}
+
+[data-theme="mac1984"] .calc-dialog-btn.danger {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+[data-theme="mac1984"] .indicator-icon,
+[data-theme="mac1984"] .moon-icon,
+[data-theme="mac1984"] .btn-icon,
+[data-theme="mac1984"] .status-icon,
+[data-theme="mac1984"] .calc-icon {
+  filter: grayscale(1) contrast(150%) !important;
+}
+
+[data-theme="mac1984"] .calc-dialog-overlay {
+  background: rgba(255, 255, 255, 0.4) var(--stipple) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+[data-theme="mac1984"] * {
+  font-family: 'Geneva', 'Chicago', sans-serif !important;
+  text-shadow: none !important;
+}
+
+/* --- Amiga Overrides --- */
+[data-theme="amiga"] .panel {
+  border: 2px solid #FFFFFF;
+  box-shadow: 4px 4px 0px #000000;
+  background: #0055AA;
+}
+
+[data-theme="amiga"] .status-header,
+[data-theme="amiga"] .calc-header {
+  background: #0044BB !important;
+  border-bottom: 2px solid #FFFFFF;
+  padding: 4px 10px;
+  color: #FFFFFF;
+}
+
+[data-theme="amiga"] .fx-card {
+  background: transparent !important;
+  border: none;
+}
+
+/* Remove fake window headers */
+[data-theme="amiga"] .time-panel::before,
+[data-theme="amiga"] .fx-panel::before,
+[data-theme="amiga"] .status-header::before,
+[data-theme="amiga"] .calc-header::before {
+  display: none !important;
+}
+
+[data-theme="amiga"] .calc-btn {
+  border: 2px solid #FFFFFF !important;
+  border-radius: 0 !important;
+  background: #0055AA !important;
+  color: #FFFFFF !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+}
+
+[data-theme="amiga"] .calc-btn:active {
+  background: #FF8800 !important;
+  box-shadow: none !important;
+  transform: translate(2px, 2px);
+}
+
+[data-theme="amiga"] .calc-body {
+  border: 2px solid #FFFFFF !important;
+  background: #004499 !important;
+}
+
+[data-theme="amiga"] .vfd-display {
+  border: 2px solid #FFFFFF !important;
+  background: #000000 !important;
+}
+
+[data-theme="amiga"] .month-card.current-month {
+  border: 2px solid #FF8800 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="amiga"] .day.today {
+  background: #FF8800 !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="amiga"] .tab-btn {
+  border: 2px solid #FFFFFF !important;
+  border-bottom: none !important;
+  background: #0044BB !important;
+  color: #FFFFFF !important;
+  border-radius: 0 !important;
+  margin-right: 2px;
+}
+
+[data-theme="amiga"] .tab-btn.active {
+  background: #FF8800 !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="amiga"] .calc-dialog {
+  border: 2px solid #FFFFFF !important;
+  background: #0055AA !important;
+  box-shadow: 8px 8px 0px #000000 !important;
+}
+
+[data-theme="amiga"] .calc-dialog-btn {
+  border: 2px solid #FFFFFF !important;
+  background: #0044BB !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="amiga"] .calc-dialog-btn.primary {
+  background: #FF8800 !important;
+}
+
+[data-theme="amiga"] * {
+  font-family: 'Courier New', Courier, monospace !important;
+  text-shadow: none !important;
+}
+
+/* === NeXTSTEP theme: Charcoal, clean lines, bold accents === */
+[data-theme="nextstep"] {
+  color-scheme: dark;
+  /* Main UI: Dark Charcoal with sharp contrast */
+  --bg: #2a2a2a;
+  --bg-gradient: none;
+  --panel: #3a3a3a;
+  --panel-gradient: none;
+  --panel-soft: #4a4a4a;
+  --text: #ffffff;
+  --muted: #aaaaaa;
+  --accent: #ffaa00;
+  --accent-2: #00cc99;
+  --shadow: rgba(0, 0, 0, 0.5);
+  --radius: 0px;
+  --flip-bg: none;
+  --flip-text: #ffffff;
+  --day-today-bg: rgba(255, 170, 0, 0.15);
+  --day-today-text: #ffdd88;
+  
+  /* Calculator-specific: NeXTSTEP aesthetic */
+  --calc-bg: #4a4a4a;
+  --calc-panel: #3a3a3a;
+  --calc-border: #000000;
+  --vfd-bg: #1a1a1a;
+  --vfd-bg-off: #0a0a0a;
+  --vfd-text: #ffaa00;
+  --vfd-text-dim: rgba(255, 170, 0, 0.7);
+  --vfd-accent: rgba(255, 170, 0, 0.5);
+  --vfd-status-off: #666666;
+  --key-bg-default: #555555;
+  --key-bg-numeric: #2a2a2a;
+  --key-bg-cyan: #1a3a4a;
+  --key-bg-green: #1a2a1a;
+  --key-bg-light-green: #2a3a2a;
+  --key-bg-gray: #4a4a4a;
+  --key-bg-gray-thumb: #888;
+  --key-text-light: #ffffff;
+  --key-text-dark: #000;
+  --key-text-cyan: #99ddff;
+  --key-minus-color: #ff5555;
+  --led-off: #333;
+  --led-on: #ffaa00;
+  --led-glow: rgba(255, 170, 0, 0.8);
+  --switch-track: #1a1a1a;
+  --switch-thumb: #666;
+  --switch-label: #aaa;
+  --switch-ticks: #aaa;
+  --paper-bg: #4a4a4a;
+  --paper-tape-bg: #2a2a2a;
+  --paper-ink: #ffaa00;
+  
+  /* Calc-sheet specific */
+  --sheet-bg: #3a3a3a;
+  --sheet-cell: #4a4a4a;
+  --sheet-grid: rgba(255, 170, 0, 0.12);
+  --sheet-text: #e8e8e8;
+  --sheet-header: #2a2a2a;
+  --sheet-header-text: #ffaa00;
+  --sheet-toolbar-bg: #3a3a3a;
+  --sheet-toolbar-border: rgba(255, 170, 0, 0.15);
+  --sheet-toolbar-text: #d0d0d0;
+  --sheet-formula-bg: #505050;
+  --sheet-formula-text: #e8e8e8;
+  --sheet-formula-border: rgba(255, 170, 0, 0.1);
+  --sheet-tool-bg: #4a4a4a;
+  --sheet-tool-border: rgba(255, 170, 0, 0.12);
+  --sheet-tool-text: #aaa;
+  --sheet-tool-active-bg: #3a5a3a;
+  --sheet-tool-active-border: rgba(255, 170, 0, 0.5);
+  --sheet-cell-focus-outline: rgba(255, 170, 0, 0.5);
+  --sheet-cell-focus-bg: #525252;
+  --sheet-cell-active-bg: #525252;
+  --sheet-cell-active-shadow: rgba(255, 170, 0, 0.35);
+  --sheet-cell-selected-bg: #3a5a3a;
+  --sheet-cell-selected-shadow: rgba(255, 170, 0, 0.25);
+  --sheet-cell-formula-bg: #464646;
+  --sheet-cell-corner-bg: #323232;
+  --sheet-cell-caret-color: #ffaa00;
+  --sheet-save-indicator-bg: rgba(255, 170, 0, 0.1);
+  --sheet-save-indicator-border: rgba(255, 170, 0, 0.15);
+  --sheet-save-indicator-active-bg: #ffaa00;
+  --sheet-save-indicator-active-shadow: rgba(255, 170, 0, 0.25);
+  --sheet-formula-empty-text: rgba(180, 180, 180, 0.5);
+  --sheet-context-menu-bg: #505050;
+  --sheet-context-menu-border: rgba(255, 170, 0, 0.15);
+  --sheet-context-menu-text: #d0d0d0;
+  --sheet-context-menu-shadow: rgba(0, 0, 0, 0.6);
+  --sheet-context-menu-btn-hover: #3a5a3a;
+  --sheet-note-text: rgba(200, 200, 200, 0.6);
+  --sheet-grid-shadow: rgba(255, 170, 0, 0.08);
+  
+  /* Tape/Paper text (consistent with dark theme) */
+  --tape-text: #f0f0f0;
+  --tape-symbol-color: #f0f0f0;
+  --tape-percent-color: #bbbbbb;
+  --tape-negative-color: #ff5555;
+  --tape-result-text: #f0f0f0;
+  
+  /* Scrollbar styling */
+  --scrollbar-track-bg: rgba(0, 0, 0, 0.5);
+  --scrollbar-thumb-bg: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover-bg: rgba(255, 255, 255, 0.3);
+  
+  /* History container */
+  --history-container-bg: #2a2a2a;
+  
+  /* Moon & Calendar */
+  --moon-title-color: #ffaa00;
+  --moon-phase-color: #ffcc44;
+  --calendar-context-menu-bg: #3a3a3a;
+  --calendar-context-menu-text: #ffffff;
+  --calendar-context-menu-border: rgba(255, 170, 0, 0.25);
+  --calendar-context-menu-header-text: #ffaa00;
+  --calendar-context-menu-divider: rgba(255, 170, 0, 0.15);
+  --calendar-context-menu-btn-hover: rgba(255, 170, 0, 0.15);
+  
+  /* Trading Links */
+  --trading-bg: #2a2a2a;
+  --trading-link-bg: rgba(60, 40, 0, 0.6);
+  --trading-link-text: #ffaa00;
+  --trading-link-border: rgba(255, 170, 0, 0.2);
+  --trading-link-hover-bg: rgba(80, 60, 0, 0.7);
+  --trading-link-hover-border: rgba(255, 170, 0, 0.4);
+  
+  /* FX Status */
+  --fx-status-color: #ffaa00;
+  --fx-status-cached-color: #aaa;
+  --fx-change-negative-color: #ff8888;
+  --fx-text-color: #ffffff;
+  --fx-title-color: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", "SF Pro Text", "Segoe UI", sans-serif;
+  background: var(--bg-gradient, var(--bg));
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(27, 32, 40, 0.8);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.theme-toggle:hover {
+  background: rgba(34, 40, 50, 0.95);
+  color: var(--text);
+}
+
+[data-theme="light"] .theme-toggle {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: var(--muted);
+}
+
+[data-theme="light"] .theme-toggle:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}
+
+.calendar-view-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.calendar-view-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+[data-theme="light"] .calendar-view-toggle {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .calendar-view-toggle:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.settings-meta,
+.status-meta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.1;
+}
+
+.settings-build {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.github-sync-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-indicators-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sync-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  cursor: default;
+  user-select: none;
+  padding: 2px;
+}
+
+.indicator-icon {
+  font-size: 1rem;
+  opacity: 0.25;
+  transition: all 0.3s ease;
+  filter: grayscale(1);
+}
+
+.sync-indicator.active .indicator-icon {
+  opacity: 1;
+  filter: grayscale(0);
+}
+
+.sync-indicator.active .indicator-text {
+  color: var(--text);
+}
+
+.indicator-text {
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.theme-selection-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.theme-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.theme-select-box {
+  flex: 1;
+  max-width: 140px;
+  padding: 6px 30px 6px 10px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  background-color: var(--bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: all 0.2s ease;
+}
+
+.theme-select-box:hover {
+  border-color: var(--accent);
+  background-color: var(--panel-soft);
+}
+
+.theme-select-box:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(122, 166, 194, 0.2);
+}
+
+[data-theme="light"] .status-indicators-grid {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .theme-select-box {
+  background-color: var(--bg);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='none' stroke='rgba(0,0,0,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3l3 3 3-3'/%3E%3C/svg%3E");
+}
+
+.gist-url-input {
+  display: flex;
+}
+
+.gist-url-field {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(27, 32, 40, 0.8);
+  color: var(--text);
+  font-family: monospace;
+}
+
+.gist-url-field::placeholder {
+  color: var(--muted);
+}
+
+.gist-url-field:focus {
+  outline: none;
+  border-color: rgba(122, 166, 194, 0.5);
+  background: rgba(27, 32, 40, 0.95);
+}
+
+.sync-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.sync-btn {
+  flex: 1;
+  padding: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.sync-btn:hover:not(:disabled) {
+  background: var(--panel-soft);
+  border-color: var(--accent);
+}
+
+.sync-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sync-btn.load-btn {
+  color: var(--accent);
+}
+
+.sync-btn.save-btn {
+  color: var(--accent-2);
+}
+
+[data-theme="light"] .sync-btn {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .sync-btn:hover:not(:disabled) {
+  background: #f0f2f5;
+  border-color: var(--accent);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 10px;
+  padding: 10px;
+  height: 1020px;
+  max-height: 1020px;
+  width: 1560px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.panel {
+  background: var(--panel-gradient, var(--panel));
+  border-radius: var(--radius);
+  box-shadow: 0 20px 40px var(--shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-header h1,
+.panel-header h2 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.panel-header p,
+.panel-header .hint {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.flip-clock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  color: #dfe7f0;
+}
+
+.flip-unit {
+  position: relative;
+  width: 46px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--flip-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 12px var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  perspective: 600px;
+}
+
+.flip-unit::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.flip-value {
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  transform-origin: center 60%;
+}
+
+.flip-unit.flip-animate .flip-value {
+  animation: flipStrong 0.6s ease;
+}
+
+.flip-sep {
+  font-size: 1.1rem;
+  color: #9fb2c4;
+}
+
+@keyframes flipStrong {
+  0% {
+    transform: rotateX(0deg);
+  }
+  40% {
+    transform: rotateX(-90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+@keyframes syncSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.panel-header.small h2 {
+  font-size: 1rem;
+}
+
+.left-column {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 12px;
+  width: 420px;
+}
+
+.right-column {
+  display: grid;
+  grid-template-columns: 780px 318px;
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas:
+    "time status"
+    "fx status"
+    "calc calc";
+  gap: 12px;
+  width: 1110px;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-group h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.settings-input {
+  background: rgba(18, 22, 30, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.settings-input:focus {
+  outline: 2px solid rgba(122, 166, 194, 0.5);
+  border-color: transparent;
+}
+
+.settings-btn {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(32, 38, 48, 0.9);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.settings-btn.primary {
+  background: linear-gradient(140deg, rgba(122, 166, 194, 0.8), rgba(122, 166, 194, 0.45));
+  border-color: rgba(122, 166, 194, 0.6);
+}
+
+.settings-btn:hover {
+  filter: brightness(1.05);
+}
+
+.settings-status {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.calendar-panel {
+  overflow: hidden;
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+}
+
+.clock-wrap {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.analog-clock {
+  display: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f4f6f8, #e5e8ec 70%);
+  box-shadow: inset 0 0 0 3px #1a1e24, 0 6px 12px rgba(0, 0, 0, 0.35);
+  position: relative;
+}
+
+.analog-face {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    #20242c 0deg 4deg,
+    transparent 4deg 30deg
+  );
+  mask: radial-gradient(circle, transparent 0 58%, #000 59%);
+}
+
+.hand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg);
+  border-radius: 999px;
+}
+
+.hand.hour {
+  width: 4px;
+  height: 16px;
+  background: #1a1e24;
+  top: calc(50% - 16px);
+}
+
+.hand.minute {
+  width: 3px;
+  height: 22px;
+  background: #1a1e24;
+  top: calc(50% - 22px);
+}
+
+.center-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #d14a3a;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px #f2f4f6;
+}
+
+.clock-wrap.is-analog .flip-clock {
+  display: none;
+}
+
+.clock-wrap.is-analog .analog-clock {
+  display: block;
+}
+
+.months {
+  display: grid;
+  grid-auto-rows: max-content;
+  gap: 8px;
+  padding-right: 4px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scroll-behavior: smooth;
+}
+
+.months::-webkit-scrollbar {
+  width: 6px;
+}
+
+.months::-webkit-scrollbar-thumb {
+  background: var(--panel-soft);
+  border-radius: 99px;
+}
+
+.month-card {
+  background: var(--panel-soft);
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.month-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 400;
+  margin-bottom: 4px;
+  font-size: 0.86rem;
+}
+
+.weekdays,
+.days {
+  display: grid;
+  grid-template-columns: 28px repeat(7, 1fr);
+  gap: 0;
+  font-size: 0.86rem;
+  text-align: right;
+  line-height: 1.0;
+}
+
+.weekdays span {
+  color: var(--muted);
+  padding-right: 4px;
+}
+
+.weekdays span.weekend-header {
+  color: #c7b29b;
+}
+
+.week-label {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.86rem;
+}
+
+.week-number {
+  color: var(--accent-2);
+  font-weight: 400;
+  font-size: 0.86rem;
+  align-self: center;
+}
+
+.day {
+  padding: 2px 8px 2px 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  line-height: 1.0;
+}
+
+.day.muted {
+  color: #5f6a7b;
+}
+
+.day.out-of-month {
+  color: transparent;
+}
+
+.day.weekend-day {
+  color: #c6cbd3;
+}
+
+.day.today {
+  margin-left: 12px;
+  background: var(--day-today-bg);
+  color: var(--day-today-text);
+  font-weight: 600;
+  border: thin dashed red ;
+}
+
+.moon-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.moon-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+.moon-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.moon-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--moon-title-color, #cbd2db);
+}
+
+.moon-phase {
+  font-size: 0.60rem;
+  color: var(--moon-phase-color, #b8d4f3);
+  white-space: pre-line;
+}
+
+.time-panel {
+  grid-area: time;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 64px;
+  padding: 0 12px;
+}
+
+.time-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 60px;
+  height: 100%;
+}
+
+.date-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.date-display:hover {
+  color: var(--accent);
+}
+
+.date-display-text {
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  text-align: center;
+  white-space: pre-line;
+  color: var(--muted);
+}
+
+.date-format-menu {
+  position: fixed;
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--calendar-context-menu-bg, #101820);
+  border: 1px solid var(--calendar-context-menu-border, rgba(122, 166, 194, 0.35));
+  box-shadow: 0 10px 26px rgba(10, 15, 20, 0.35);
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--calendar-context-menu-text, #e7f0f6);
+}
+
+.date-format-menu.is-visible {
+  display: flex;
+}
+
+.date-format-menu button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--calendar-context-menu-text, #e7f0f6);
+  transition: background-color 0.2s ease;
+}
+
+.date-format-menu button:hover {
+  background: var(--calendar-context-menu-btn-hover, rgba(122, 166, 194, 0.18));
+}
+
+.date-format-menu button:active {
+  background: var(--calendar-context-menu-btn-hover, rgba(122, 166, 194, 0.25));
+}
+
+.date-format-menu button.copied {
+  background: rgba(155, 179, 168, 0.3);
+  color: var(--accent-2);
+}
+
+.fx-panel {
+  grid-area: fx;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 780px;
+}
+
+.fx-card {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  align-items: center;
+  background: var(--panel-soft);
+  border-radius: 16px;
+  padding: 8px 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  height: 200px;
+  box-sizing: border-box;
+}
+
+.calendar-context-menu {
+  position: fixed;
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--calendar-context-menu-bg, #101820);
+  border: 1px solid var(--calendar-context-menu-border, rgba(122, 166, 194, 0.35));
+  box-shadow: 0 10px 26px rgba(10, 15, 20, 0.35);
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.7rem;
+  color: var(--calendar-context-menu-text, #e7f0f6);
+}
+
+.calendar-context-menu.is-visible {
+  display: flex;
+}
+
+.calendar-context-header {
+  padding: 6px 8px 8px;
+  font-weight: 700;
+  color: var(--calendar-context-menu-header-text, #e7f0f6);
+  white-space: nowrap;
+}
+
+.calendar-context-divider {
+  height: 1px;
+  background: var(--calendar-context-menu-divider, rgba(122, 166, 194, 0.25));
+  margin: 2px 6px 6px;
+}
+
+.calendar-context-menu button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--calendar-context-menu-text, #e7f0f6);
+}
+
+.calendar-context-menu button:hover {
+  background: var(--calendar-context-menu-btn-hover, rgba(122, 166, 194, 0.18));
+}
+
+.status-card {
+  grid-area: status;
+  background: var(--panel-gradient, linear-gradient(150deg, var(--panel), #1d222c));
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: 0 20px 40px var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.trading-panel {
+  max-height: 0;
+  padding: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-12px);
+  transition: max-height 0.45s ease, opacity 0.35s ease, transform 0.45s ease, padding 0.35s ease;
+}
+
+body.show-trading .trading-panel {
+  max-height: 220px;
+  padding: 12px 12px 14px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.trading-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  background: var(--trading-bg, #101319);
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trading-links a {
+  display: block;
+  text-decoration: none;
+  color: var(--trading-link-text, #dfe7f0);
+  background: var(--trading-link-bg, rgba(32, 38, 48, 0.9));
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  text-align: center;
+  border: 1px solid var(--trading-link-border, rgba(255, 255, 255, 0.08));
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.trading-links a:hover {
+  background: var(--trading-link-hover-bg, rgba(40, 48, 60, 0.95));
+  border-color: var(--trading-link-hover-border, rgba(122, 166, 194, 0.5));
+}
+
+body.show-trading .calculator-panel {
+  transform: translateY(10px);
+  transition: transform 0.45s ease;
+}
+
+.fx-meta {
+  display: grid;
+  gap: 8px;
+}
+
+.fx-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--fx-title-color, #dfe7f0);
+}
+
+.fx-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fx-status-color, #9bb3a8);
+  box-shadow: 0 0 8px rgba(155, 179, 168, 0.6);
+}
+
+.fx-status.cached {
+  background: var(--fx-status-cached-color, #a8b0bf);
+  box-shadow: none;
+}
+
+.fx-price {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--fx-text-color, #e8eef4);
+}
+
+.fx-change {
+  font-size: 0.82rem;
+  color: var(--accent-2);
+}
+
+.fx-change.negative {
+  color: var(--fx-change-negative-color, #d7a3a3);
+}
+
+.fx-updated {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.fx-mini {
+  display: none;
+}
+
+.fx-chart {
+  width: 100%;
+  height: 180px;
+  background: #101319;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.fx-chart canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.calculator-panel {
+  grid-area: calc;
+  background: var(--panel-gradient, linear-gradient(150deg, #242a36, #1b2028));
+  transition: transform 0.45s ease;
+  padding: 0;
+  overflow: hidden;
+}
+
+.panel-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 8px 0 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.panel-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+  max-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 2px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  color: #9aa0a6;
+  padding: 6px 8px;
+  border-radius: 12px 12px 0 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+  background: var(--panel);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  z-index: 2;
+}
+
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--panel);
+  z-index: 3;
+}
+
+.tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #eef6ff;
+}
+
+.tab-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tab-panel.active {
+  display: flex;
+}
+
+.tab-placeholder {
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--muted);
+  background: rgba(20, 24, 32, 0.35);
+}
+
+.calculator-base {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #1b212b;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.calc-display {
+  position: relative;
+  background: #10151b;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1.6rem;
+  text-align: right;
+  font-weight: 600;
+  color: #cfe3d8;
+  letter-spacing: 0.08em;
+  overflow: hidden;
+}
+
+.display-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(155, 179, 168, 0.2), transparent 70%);
+  pointer-events: none;
+}
+
+.calc-keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.key {
+  background: #2b3341;
+  border: none;
+  border-radius: 12px;
+  color: var(--text);
+  padding: 14px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.key.operator {
+  background: #324356;
+  color: #d7e7ef;
+}
+
+.key.function {
+  background: #29323d;
+  color: #c5d0da;
+}
+
+.key.wide {
+  grid-column: span 2;
+}
+
+.key:active {
+  transform: translateY(1px);
+}
+
+/* === Year Overview (compact calendar view) === */
+.year-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.year-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.year-nav-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 8px;
+  line-height: 1;
+  transition: transform 0.1s ease;
+  user-select: none;
+}
+
+.year-nav-btn:hover {
+  color: var(--text);
+  transform: scale(1.2);
+}
+
+.year-nav-btn:active {
+  transform: scale(0.9);
+}
+
+.year-label-text {
+  cursor: pointer;
+  min-width: 60px;
+  text-align: center;
+}
+
+.year-label-text:hover {
+  color: var(--accent);
+}
+
+.year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.year-month-mini {
+  background: var(--panel-soft);
+  border-radius: 10px;
+  padding: 6px 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.year-month-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 3px;
+}
+
+.year-month-label.current {
+  color: var(--accent);
+}
+
+.year-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  font-size: 0.58rem;
+  line-height: 1.5;
+  text-align: center;
+  font-family: "Droid Sans Mono", monospace;
+}
+
+.year-day {
+  color: var(--text);
+}
+
+.year-day.empty {
+  visibility: hidden;
+}
+
+.year-day.weekend {
+  color: var(--muted);
+}
+
+.year-day.today {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+[data-theme="light"] .year-day.today {
+  color: #fff;
+}
+
+/* === Light theme overrides for tabs === */
+[data-theme="light"] .panel-tabs {
+  background: #dee1e6;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .tab-btn {
+  background: transparent;
+  border-color: transparent;
+  color: #5f6368;
+}
+
+[data-theme="light"] .tab-btn.active {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #202124;
+}
+
+[data-theme="light"] .tab-btn.active::after {
+  background: #ffffff;
+}
+
+[data-theme="light"] .tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.5);
+  color: #202124;
+}
+
+[data-theme="light"] .tab-placeholder {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* === Light theme overrides for flip clock === */
+[data-theme="light"] .flip-sep {
+  color: #5a6478;
+}
+
+[data-theme="light"] .flip-clock {
+  color: var(--text);
+}
+
+/* === Light theme overrides for fx panel === */
+[data-theme="light"] .fx-card {
+  background: var(--panel-soft);
+}

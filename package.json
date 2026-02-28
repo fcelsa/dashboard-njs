@@ -1,0 +1,17 @@
+{
+  "name": "dashboard-njs",
+  "version": "0.9.6",
+  "private": true,
+  "description": "Dashboard desktop multipiattaforma con Neutralinojs",
+  "scripts": {
+    "version:sync": "node ./scripts/sync-version.mjs",
+    "setup": "./scripts/setup-neutralino.sh",
+    "dev": "npm run version:sync && node ./scripts/run-dev-safe.mjs",
+    "dev:raw": "npx @neutralinojs/neu run",
+    "build": "npm run version:sync && ./scripts/build-all.sh",
+    "build:mac": "npm run version:sync && ./scripts/build-macos-app.sh"
+  },
+  "devDependencies": {
+    "@neutralinojs/neu": "^11.7.0"
+  }
+}

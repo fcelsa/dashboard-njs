@@ -1,0 +1,179 @@
+/* --- Time & Date Section --- */
+.time-date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 950px) {
+  .time-date-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.time-date-section {
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.time-date-section h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4rem;
+}
+
+.time-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.time-input-group .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.time-input-group label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.time-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem;
+  border-radius: 3px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9rem;
+}
+
+.time-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.time-result-area {
+  background: var(--bg);
+  padding: 0.75rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 3px;
+}
+
+.result-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Holidays Table */
+.table-container {
+  max-height: 450px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.holidays-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.holidays-table th, 
+.holidays-table td {
+  text-align: left;
+  padding: 0.4rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.holidays-table th {
+  color: var(--text-dim);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--panel-soft);
+  z-index: 1;
+}
+
+.holiday-type {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.user-holiday-row input {
+  width: 100%;
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text);
+  padding: 0.25rem 0.4rem;
+  border-radius: 2px;
+  font-size: 0.85rem;
+}
+
+.h-save-btn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+/* --- Calendar Highlighting --- */
+.holiday-day,
+.sunday-red {
+  color: #ff4d4d !important;
+  font-weight: 700;
+}
+
+.user-event-day {
+  color: #ffa500 !important;
+  font-weight: 700;
+}
+
+[data-theme="light"] .holiday-day,
+[data-theme="light"] .sunday-red {
+  color: #d32f2f !important;
+}
+
+[data-theme="light"] .user-event-day {
+  color: #e67e22 !important;
+}
+
+.holiday-day,
+.user-event-day {
+  cursor: help;
+}
+
+/* --- Calendar Navigation & Highlight --- */
+.month-card.current-month {
+  box-shadow: inset 0 0 0 1px var(--accent) !important;
+}
+
+.calendar-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-indicator {
+  min-height: 20px;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--accent);
+  font-weight: bold;
+  user-select: none;
+}

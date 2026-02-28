@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/time-date.css" />
+  <link rel="stylesheet" href="css/calculator.css" />
+  <link rel="stylesheet" href="css/calc-sheet.css" />
+</head>
+
+<body>
+  <div class="app">
+    <aside class="left-column">
+      <section class="panel calendar-panel">
+        <div class="months" id="months"></div>
+      </section>
+    </aside>
+
+    <main class="right-column">
+      <section class="panel time-panel" id="time-panel">
+        <div class="calendar-controls">
+          <button class="calendar-view-toggle" id="calendar-view-toggle" type="button"
+            aria-label="Cambia vista calendario" title="Cambia vista calendario">
+            ☰
+          </button>
+          <div id="calendar-nav-indicator" class="nav-indicator"></div>
+        </div>
+        <div class="time-panel-content">
+          <div class="date-display" id="date-display" role="button" aria-label="Mostra formati data disponibili">
+            <span class="date-display-text"></span>
+          </div>
+          <div class="clock-wrap" id="clock-wrap" role="button" aria-label="Cambia vista orologio">
+            <div class="flip-clock" id="flip-clock" aria-live="polite">
+              <div class="flip-unit" data-unit="hours">
+                <span class="flip-value">00</span>
+              </div>
+              <div class="flip-sep">:</div>
+              <div class="flip-unit" data-unit="minutes">
+                <span class="flip-value">00</span>
+              </div>
+            </div>
+            <div class="analog-clock" id="analog-clock" aria-hidden="true">
+              <div class="analog-face"></div>
+              <div class="hand hour"></div>
+              <div class="hand minute"></div>
+              <div class="center-dot"></div>
+            </div>
+          </div>
+          <div class="moon-now" id="moon-now">
+            <span class="moon-icon" aria-hidden="true">🌑</span>
+            <div class="moon-meta">
+              <span class="moon-title">Luna</span>
+              <span class="moon-phase">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel fx-panel">
+        <div class="fx-card">
+          <div class="fx-meta">
+            <div class="fx-title">
+              <span>EUR/USD</span>
+              <span class="fx-status" id="fx-status">•</span>
+            </div>
+            <div class="fx-price" id="fx-price">--</div>
+            <div class="fx-change" id="fx-change">--</div>
+            <div class="fx-updated" id="fx-updated">Aggiornamento: --</div>
+          </div>
+          <div class="fx-chart">
+            <canvas id="fx-chart" width="500" height="200" aria-label="Grafico EUR/USD anno su anno"></canvas>
+          </div>
+        </div>
+        <div class="trading-panel" id="trading-panel">
+          <div class="trading-links" role="list">
+            <a href="https://tradingeconomics.com/currencies" target="_blank" rel="noopener noreferrer">Trading
+              Economics valute</a>
+            <a href="https://freecurrencyapi.com/" target="_blank" rel="noopener noreferrer">freecurrencyapi</a>
+            <a href="https://www.google.com/finance/quote/EUR-USD?hl=it" target="_blank"
+              rel="noopener noreferrer">Google Finance</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel status-card" id="status-card">
+        <div class="status-header">
+          <h3>Status</h3>
+          <div class="status-meta" id="settings-meta" aria-live="polite">
+            <div class="settings-build">ver. 0.9.6</div>
+          </div>
+        </div>
+
+        <div class="status-indicators-grid">
+          <div class="sync-indicator" id="fx-api-status" title="Stato chiave FreeCurrencyAPI">
+            <span class="indicator-icon">💹</span>
+            <span class="indicator-text">FX API</span>
+          </div>
+          <div class="sync-indicator" id="github-login-status" title="Stato connessione GitHub">
+            <span class="indicator-icon">⊙</span>
+            <span class="indicator-text">GitHub</span>
+          </div>
+          <div class="sync-indicator" id="token-status" title="Stato token memorizzato">
+            <span class="indicator-icon">🔑</span>
+            <span class="indicator-text">Token</span>
+          </div>
+          <div class="sync-indicator" id="gist-url-indicator" title="Stato URL Gist">
+            <span class="indicator-icon">📎</span>
+            <span class="indicator-text">Gist URL</span>
+          </div>
+        </div>
+
+        <div class="github-sync-section">
+          <div class="sync-buttons">
+            <button type="button" id="gist-load-btn" class="sync-btn load-btn" title="Carica lo stato dal Gist">
+              ↓ Carica
+            </button>
+            <button type="button" id="gist-save-btn" class="sync-btn save-btn" title="Salva lo stato sul Gist">
+              ↑ Salva
+            </button>
+          </div>
+        </div>
+
+        <div class="theme-selection-area">
+          <label for="theme-select" class="theme-label">Color</label>
+          <select id="theme-select" class="theme-select-box" aria-label="Seleziona tema">
+            <option value="dark">🌙 Dark</option>
+            <option value="light">☀️ Light</option>
+            <option value="amoled">🕶️ AMOLED</option>
+            <option value="mac1984">🖥️ Mac1984</option>
+            <option value="mac1990">🖥️ Mac1990</option>
+            <option value="nextstep">📦 NeXTSTEP</option>
+            <option value="amiga">🖥️ Amiga</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="panel calculator-panel" id="calculator-panel">
+        <header class="panel-header panel-tabs" role="tablist">
+          <button class="tab-btn active" data-tab="calculator" role="tab" aria-selected="true"
+            type="button">📟 Calcolatrice</button>
+          <button class="tab-btn" data-tab="calc-sheet" role="tab" aria-selected="false" type="button">📊 Calc
+            Sheet</button>
+          <button class="tab-btn" data-tab="time-date" role="tab" aria-selected="false" type="button">📅 Time & Date</button>
+          <button class="tab-btn" data-tab="utility" role="tab" aria-selected="false" type="button">🛠️ Utility</button>
+          <button class="tab-btn" data-tab="settings" role="tab" aria-selected="false" type="button">⚙️ Settings</button>
+        </header>
+
+        <div class="tab-panels">
+          <section class="tab-panel active" data-tab-panel="calculator">
+            <div class="calculator-wrapper" tabindex="0">
+              <!-- Corpo Macchina -->
+              <div class="calc-body">
+                <!-- Focus LED -->
+                <div class="focus-led"></div>
+                <!-- VFD Display -->
+                <div class="vfd-display">
+                  <!-- Indicators Left -->
+                  <div class="vfd-status-icons left">
+                    <div class="vfd-icon-row">
+                      <span class="vfd-icon off" id="icon-gt">GT</span>
+                      <span class="vfd-icon-value" id="icon-gt-value"></span>
+                    </div>
+                    <span class="vfd-icon off" id="icon-mem">M</span>
+                  </div>
+                  <span class="vfd-text" id="vfd-display">0</span>
+                  <div class="vfd-stack" id="vfd-stack" aria-hidden="true"></div>
+                  <!-- Indicators Right -->
+                  <div class="vfd-status-icons right">
+                    <span class="vfd-indicator-soft" id="icon-tape-count">0</span>
+                    <span class="vfd-indicator-soft" id="icon-operator"></span>
+                    <span class="vfd-icon off" id="icon-business">B</span>
+                  </div>
+                </div>
+
+                <!-- Switches Row -->
+                <div class="calc-switches">
+                  <!-- RO: 3 posizioni (0, 5, 9) -->
+                  <div class="switch-wrapper multi-switch ro-switch" title="Arrotondamento">
+                    <span class="switch-label">RO</span>
+                    <!-- Default su 5 (indice 1) -->
+                    <input type="range" class="switch-slider" id="switch-ro" min="0" max="2" step="1" value="1">
+                    <div class="switch-ticks">
+                      <span>0</span>
+                      <span>5</span>
+                      <span>9</span>
+                    </div>
+                  </div>
+
+                  <!-- DEC: 6 posizioni (0, 2, 4, 6, F) -->
+                  <div class="switch-wrapper multi-switch dec-switch" title="Decimali">
+                    <!-- F per Floating -->
+                    <span class="switch-label">DEC</span>
+                    <!-- 5 posizioni: 0, 2, 4, 6, F -->
+                    <input type="range" class="switch-slider" id="switch-dec" min="0" max="6" step="1" value="2">
+                    <div class="switch-ticks switch-ticks-dec">
+                      <span>+</span>
+                      <span>0</span>
+                      <span>2</span>
+                      <span>3</span>
+                      <span>4</span>
+                      <span>6</span>
+                      <span>F</span>
+                    </div>
+                  </div>
+
+                  <!-- ACC: On/Off -->
+                  <div class="switch-wrapper" title="Totale (Accumulo)">
+                    <span class="switch-label">ACC</span>
+                    <label class="switch">
+                      <input type="checkbox" id="switch-acc" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+
+                  <!-- PRT: On/Off -->
+                  <div class="switch-wrapper" title="Stampa">
+                    <span class="switch-label">PRT</span>
+                    <label class="switch">
+                      <input type="checkbox" id="switch-prt" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Tastiera -->
+                <div class="calc-keyboard-container">
+
+                  <!-- Nuova fila tasti funzioni (Cost, Sell, Margin...) -->
+                  <div class="calc-func-keys">
+                    <button class="key-btn key-rect key-gray" data-key="COST">COST</button>
+                    <button class="key-btn key-rect key-gray" data-key="SELL">SELL</button>
+                    <button class="key-btn key-rect key-gray" data-key="MARGIN">MARGIN</button>
+                    <button class="key-btn key-rect key-gray" data-key="MARKUP">MARKUP</button>
+                    <button class="key-btn key-rect key-gray" data-key="TAX+">TAX+</button>
+                    <button class="key-btn key-rect key-gray" data-key="TAX-">TAX-</button>
+                  </div>
+
+                  <div class="calc-main-keys">
+                    <!-- Blocco 2: Numerico (Centrale) -->
+                    <div class="key-block block-center">
+                      <button class="key-btn key-round" data-key="CE" title="Cancella/Azzeramento">CE</button>
+                      <button class="key-btn key-round" data-key="7">7</button>
+                      <button class="key-btn key-round" data-key="8">8</button>
+                      <button class="key-btn key-round" data-key="9">9</button>
+
+                      <button class="key-btn key-round" data-key="±">±</button>
+                      <button class="key-btn key-round" data-key="4">4</button>
+                      <button class="key-btn key-round" data-key="5">5</button>
+                      <button class="key-btn key-round" data-key="6">6</button>
+
+                      <button class="key-btn key-round" data-key=".">.</button>
+                      <button class="key-btn key-round" data-key="1">1</button>
+                      <button class="key-btn key-round" data-key="2">2</button>
+                      <button class="key-btn key-round" data-key="3">3</button>
+
+                      <button class="key-btn key-round key-double-h" data-key="0">0</button>
+                      <button class="key-btn key-round" data-key="00" title="Doppio Zero (Numpad: Ctrl + 0)">00</button>
+                      <button class="key-btn key-round" data-key="000"
+                        title="Triplo Zero (Numpad: Alt + 0)">000</button>
+                    </div>
+
+                    <!-- Blocco 3: Operatori/Totali (Destra) -->
+                    <div class="key-block block-right">
+                      <button class="key-btn key-square key-cyan" data-key="x">x</button>
+                      <button class="key-btn key-square key-cyan" data-key="÷">÷</button>
+                      <button class="key-btn key-square key-cyan" data-key="^" title="Potenza (Tasto: ^ o p)">xʸ</button>
+                      <button class="key-btn key-square key-light-green" data-key="MC" title="Memory Clear">MC</button>
+
+                      <button class="key-btn key-square key-green" data-key="-">-</button>
+                      <button class="key-btn key-square key-cyan" data-key="%">%</button>
+                      <button class="key-btn key-square key-cyan" data-key="√" title="Radice Quadrata (Tasto: r)">√</button>
+                      <button class="key-btn key-square key-light-green" data-key="MR" title="Memory Recall">MR</button>
+
+                      <button class="key-btn key-square key-green" data-key="+">+</button>
+                      <button class="key-btn key-square key-cyan" data-key="Δ" title="Variazione % (Tasto: d)">Δ</button>
+                      <button class="key-btn key-square key-green" data-key="GT" title="Grand Total">GT</button>
+                      <button class="key-btn key-square key-light-green" data-key="M-" title="Memory Minus">M-</button>
+
+                      <button class="key-btn key-square key-cyan key-double-h" data-key="=">=</button>
+                      <button class="key-btn key-square key-cyan" data-key="#" title="Non-Add / Data (Tasto: #)">#</button>
+                      <button class="key-btn key-square key-light-green" data-key="M+" title="Memory Plus">M+</button>
+                    </div>
+                  </div> <!-- close calc-main-keys -->
+                </div>
+                <!-- History Snapshots (Sotto Calc Body) -->
+                <div class="calc-history-container">
+                  <div class="calc-history-controls">
+                    <button type="button" id="calc-save-btn" class="calc-save-btn" title="Salva il calcolo con un nome personalizzato">Salva</button>
+                    <button type="button" id="calc-load-btn" class="calc-load-btn" title="Carica un calcolo salvato">Richiama</button>
+                    <button type="button" id="calc-clear-history-btn" class="calc-save-btn" title="Svuota cronologia sessioni">Svuota</button>
+                  </div>
+                  <div class="calc-history-icons" id="calc-history-icons">
+                    <!-- JS will append snapshot icons here (max 8) -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lato Destro: Paper -->
+              <div class="calc-right-panel">
+                <!-- Carta Destra -->
+                <div class="paper-container">
+                  <div class="paper-tape" id="paper-tape">
+                    <!-- JS will append rows here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+          <section class="tab-panel" data-tab-panel="calc-sheet">
+            <div class="calc-sheet-wrap">
+              <div class="calc-sheet-toolbar" data-calc-sheet-toolbar role="toolbar" aria-label="Formattazione celle">
+                <button class="sheet-tool" type="button" data-sheet-action="bold" aria-pressed="false">B</button>
+                <button class="sheet-tool" type="button" data-sheet-action="color" data-color="black"
+                  aria-pressed="false">
+                  Nero
+                </button>
+                <button class="sheet-tool" type="button" data-sheet-action="color" data-color="blue"
+                  aria-pressed="false">
+                  Blu
+                </button>
+                <button class="sheet-tool" type="button" data-sheet-action="color" data-color="red"
+                  aria-pressed="false">
+                  Rosso
+                </button>
+                <button class="sheet-tool" type="button" data-sheet-action="color" data-color="green"
+                  aria-pressed="false">
+                  Verde
+                </button>
+                <div class="calc-sheet-formula" data-sheet-formula aria-live="polite"></div>
+                <span class="calc-sheet-save" data-sheet-save aria-hidden="true"></span>
+              </div>
+              <div class="calc-sheet calc-sheet-grid" data-calc-sheet aria-label="Foglio elettronico minimale"></div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-tab-panel="time-date">
+            <div class="panel-header small">
+              <h2>Time & Date</h2>
+              <p class="hint">Calcolo differenze temporali e gestione festività.</p>
+            </div>
+            
+            <div class="time-date-grid">
+              <!-- Calcolatore Differenza -->
+              <div class="time-date-section calculator-card">
+                <h3>Calcolo Differenza</h3>
+                <div class="time-input-group">
+                  <div class="field">
+                    <label for="date-start">Inizio</label>
+                    <input type="text" id="date-start" class="time-input" placeholder="GG/MM/AAAA o AAAA/MM/GG HH:MM" spellcheck="false" autocomplete="off">
+                  </div>
+                  <div class="field">
+                    <label for="date-end">Fine</label>
+                    <input type="text" id="date-end" class="time-input" placeholder="GG/MM/AAAA o HH:MM" spellcheck="false" autocomplete="off">
+                  </div>
+                </div>
+                <div class="time-result-area">
+                  <span class="label">Risultato:</span>
+                  <div id="date-diff-result" class="result-value">Inserire le date</div>
+                </div>
+              </div>
+
+              <!-- Lista Festività -->
+              <div class="time-date-section holidays-card">
+                <h3>Festività Italiane ed Eventi</h3>
+                <div class="table-container">
+                  <table class="holidays-table">
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        <th>Nome Festività</th>
+                        <th>Note</th>
+                      </tr>
+                    </thead>
+                    <tbody id="holidays-body">
+                      <!-- Popolato via JS -->
+                    </tbody>
+                  </table>
+                </div>
+                <div class="holidays-legend">
+                  <p class="hint">* Le feste in corsivo sono calcolate annualmente (es. Pasqua).</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-tab-panel="utility">
+            <div class="panel-header small">
+              <h2>Utility</h2>
+              <p class="hint">Utility rapide (in preparazione).</p>
+            </div>
+            <div class="tab-placeholder">
+              <p>Spazio riservato alle utility.</p>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-tab-panel="settings">
+            <div class="panel-header small">
+              <h2>Impostazioni</h2>
+              <p class="hint">Preferenze dashboard e chiavi API</p>
+            </div>
+            <div class="settings-content">
+              <div class="settings-group">
+                <h3>API FX (FreeCurrencyAPI)</h3>
+                <p class="hint">
+                  Inserisci la tua chiave personale per api.freecurrencyapi.com.
+                  Verrà salvata nel browser (cookie).
+                </p>
+                <form class="settings-form" id="fx-key-form" autocomplete="off">
+                  <label class="settings-label" for="freecurrency-key">API Key</label>
+                  <div class="settings-row">
+                    <input class="settings-input" id="freecurrency-key" name="freecurrency-key" type="password"
+                      placeholder="Incolla qui la tua API key" spellcheck="false" inputmode="text" />
+                    <button class="settings-btn primary" type="submit">Salva</button>
+                    <button class="settings-btn" type="button" id="clear-freecurrency-key">
+                      Rimuovi
+                    </button>
+                  </div>
+                  <p class="settings-status" id="fx-key-status">Nessuna chiave salvata.</p>
+                </form>
+              </div>
+
+              <div class="settings-group">
+                <h3>GitHub Gist API</h3>
+                <p class="hint">
+                  Inserisci il tuo personal access token per GitHub Gist e l'URL del Gist.
+                  Verranno salvati nel browser (cookie).
+                </p>
+                <form class="settings-form" id="gist-key-form" autocomplete="off">
+                  <label class="settings-label" for="gist-token">GitHub Token</label>
+                  <div class="settings-row">
+                    <input class="settings-input" id="gist-token" name="gist-token" type="password"
+                      placeholder="Incolla qui il tuo GitHub personal access token" spellcheck="false" inputmode="text" />
+                    <button class="settings-btn primary" type="submit">Salva</button>
+                    <button class="settings-btn" type="button" id="clear-gist-token">
+                      Rimuovi
+                    </button>
+                  </div>
+                  <p class="settings-status" id="gist-key-status">Nessun token salvato.</p>
+                  
+                  <label class="settings-label" for="gist-url">URL Gist</label>
+                  <div class="settings-row">
+                    <input class="settings-input" id="gist-url" name="gist-url" type="text"
+                      placeholder="es: https://gist.github.com/username/abc123def456" spellcheck="false" />
+                    <button class="settings-btn primary" type="button" id="save-gist-url">Salva</button>
+                    <button class="settings-btn" type="button" id="clear-gist-url">
+                      Rimuovi
+                    </button>
+                  </div>
+                  <p class="settings-status" id="gist-url-status">Nessun URL salvato.</p>
+                </form>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>

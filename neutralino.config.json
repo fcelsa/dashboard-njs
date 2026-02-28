@@ -1,0 +1,40 @@
+{
+  "applicationId": "it.fcs.dashboardnjs",
+  "applicationName": "dashboard-njs",
+  "version": "0.9.6",
+  "defaultMode": "window",
+  "port": 59210,
+  "enableServer": true,
+  "enableNativeAPI": false,
+  "tokenSecurity": "one-time",
+  "url": "/index.html",
+  "documentRoot": "/resources/",
+  "logging": {
+    "enabled": true,
+    "writeToLogFile": true
+  },
+  "modes": {
+    "window": {
+      "title": "dashboard-njs",
+      "width": 1560,
+      "height": 1050,
+      "minWidth": 1560,
+      "minHeight": 1050,
+      "maxWidth": 1560,
+      "maxHeight": 1050,
+      "resizable": false,
+      "maximize": false,
+      "center": true,
+      "useSavedState": false,
+      "enableInspector": false
+    }
+  },
+  "cli": {
+    "binaryName": "dashboard-njs",
+    "resourcesPath": "/resources/",
+    "clientLibrary": "/resources/js/neutralino.js",
+    "distributionPath": "/dist/",
+    "binaryVersion": "6.5.0",
+    "clientVersion": "6.5.0"
+  }
+}

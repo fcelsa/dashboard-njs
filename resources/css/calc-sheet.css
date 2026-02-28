@@ -1,0 +1,220 @@
+/* Calc-sheet theme variables now defined in styles.css under each [data-theme] selector */
+
+.calc-sheet-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.tab-panel[data-tab-panel="calc-sheet"] {
+  height: 100%;
+}
+
+.calculator-panel {
+  min-height: 0;
+}
+
+.calculator-panel .tab-panels {
+  flex: 1;
+  min-height: 0;
+}
+
+.calculator-panel .tab-panel.active {
+  flex: 1;
+  min-height: 0;
+}
+
+.calc-sheet-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: var(--sheet-toolbar-bg, #efe4bf);
+  border: 1px solid var(--sheet-toolbar-border, rgba(60, 52, 35, 0.25));
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.68rem;
+  color: var(--sheet-toolbar-text, var(--sheet-text));
+}
+
+.calc-sheet-formula {
+  flex: 0 1 320px;
+  min-width: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--sheet-formula-bg, #f6eed1);
+  border: 1px solid var(--sheet-formula-border, rgba(60, 52, 35, 0.2));
+  color: var(--sheet-formula-text, #3a3526);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  min-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calc-sheet-save {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sheet-save-indicator-bg, rgba(58, 53, 38, 0.25));
+  box-shadow: inset 0 0 0 1px var(--sheet-save-indicator-border, rgba(60, 52, 35, 0.3));
+  margin-left: auto;
+}
+
+.calc-sheet-save.is-active {
+  background: var(--sheet-save-indicator-active-bg, #7f5b11);
+  box-shadow: 0 0 0 2px var(--sheet-save-indicator-active-shadow, rgba(127, 91, 17, 0.2));
+}
+
+.calc-sheet-formula.is-empty {
+  color: var(--sheet-formula-empty-text, rgba(58, 53, 38, 0.55));
+}
+
+.sheet-tool {
+  border: 1px solid var(--sheet-tool-border, rgba(60, 52, 35, 0.3));
+  background: var(--sheet-tool-bg, #f6eecf);
+  color: var(--sheet-tool-text, var(--sheet-header-text));
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.68rem;
+}
+
+.sheet-tool.is-active {
+  background: var(--sheet-tool-active-bg, #fff3c6);
+  border-color: var(--sheet-tool-active-border, rgba(138, 110, 40, 0.6));
+}
+
+.calc-sheet {
+  display: grid;
+  grid-template-columns: 24px repeat(11, 1fr);
+  grid-template-rows: 16px repeat(32, minmax(16px, 1fr));
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  border-radius: 10px;
+  background: var(--sheet-bg, #f3eac8);
+  border: 1px solid var(--sheet-grid, rgba(60, 52, 35, 0.35));
+  box-shadow: inset 0 0 0 1px var(--sheet-grid-shadow, rgba(255, 255, 255, 0.35));
+  overflow: hidden;
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+  color: var(--sheet-text);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.calc-sheet-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sheet-cell);
+  border-right: 1px solid var(--sheet-grid);
+  border-bottom: 1px solid var(--sheet-grid);
+  min-width: 0;
+  min-height: 0;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.calc-sheet-cell[data-editable="true"] {
+  display: block;
+  padding: 1px 4px;
+  line-height: 1;
+  user-select: text;
+  cursor: text;
+  caret-color: var(--sheet-cell-caret-color, #2d2a20);
+  text-align: left;
+}
+
+.calc-sheet-cell.is-numeric {
+  text-align: right;
+}
+
+.calc-sheet-cell[data-editable="true"].is-view {
+  user-select: none;
+  caret-color: transparent;
+}
+
+.calc-sheet-cell[data-editable="true"]:focus {
+  outline: 2px solid var(--sheet-cell-focus-outline, rgba(138, 110, 40, 0.6));
+  outline-offset: -2px;
+  background: var(--sheet-cell-focus-bg, #fff6d8);
+}
+
+.calc-sheet-cell.is-active {
+  box-shadow: inset 0 0 0 2px var(--sheet-cell-active-shadow, rgba(138, 110, 40, 0.45));
+  background: var(--sheet-cell-active-bg, #fff6d8);
+}
+
+.calc-sheet-cell.is-selected {
+  background: var(--sheet-cell-selected-bg, #fff1c7);
+  box-shadow: inset 0 0 0 1px var(--sheet-cell-selected-shadow, rgba(138, 110, 40, 0.35));
+}
+
+.calc-sheet-cell.has-formula {
+  background: var(--sheet-cell-formula-bg, #efe1b0);
+}
+
+.calc-sheet-cell.header {
+  background: var(--sheet-header);
+  font-weight: 600;
+  color: var(--sheet-header-text);
+  font-size: 0.68rem;
+}
+
+.calc-sheet-cell.corner {
+  background: var(--sheet-cell-corner-bg, #e1d6aa);
+}
+
+.calc-sheet-grid {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.calc-sheet-note {
+  color: var(--sheet-note-text, rgba(58, 53, 38, 0.7));
+  font-size: 0.72rem;
+}
+
+.sheet-context-menu {
+  position: fixed;
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  min-width: 120px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--sheet-context-menu-bg, #f6eecf);
+  border: 1px solid var(--sheet-context-menu-border, rgba(60, 52, 35, 0.3));
+  box-shadow: 0 8px 20px var(--sheet-context-menu-shadow, rgba(28, 26, 18, 0.2));
+  font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.7rem;
+  color: var(--sheet-context-menu-text, var(--sheet-text));
+}
+
+.sheet-context-menu.is-visible {
+  display: flex;
+}
+
+.sheet-context-menu button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--sheet-context-menu-text, var(--sheet-text));
+}
+
+.sheet-context-menu button:hover {
+  background: var(--sheet-context-menu-btn-hover, #fff3c6);
+}
