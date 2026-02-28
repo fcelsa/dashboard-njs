@@ -5,10 +5,10 @@
   "description": "Dashboard desktop multipiattaforma con Neutralinojs",
   "scripts": {
     "version:sync": "node ./scripts/sync-version.mjs",
-    "setup": "./scripts/setup-neutralino.sh",
+    "setup": "node ./scripts/setup-neutralino.mjs",
     "dev": "npm run version:sync && node ./scripts/run-dev-safe.mjs",
     "dev:raw": "npx @neutralinojs/neu run",
-    "build": "npm run version:sync && ./scripts/build-all.sh",
+    "build": "npm run version:sync && node ./scripts/build-all.mjs",
     "build:mac": "npm run version:sync && ./scripts/build-macos-app.sh"
   },
   "devDependencies": {

@@ -32,7 +32,7 @@ If your frontend build outputs a folder such as `dist` or `build`, copy its cont
 
 ```bash
 npm install
-./scripts/setup-neutralino.sh
+npm run setup
 ```
 
 ## Local Run
@@ -49,8 +49,11 @@ npm run dev
 ## Standalone Release Build
 
 ```bash
-./scripts/build-all.sh
+npm run build
 ```
+
+`setup` and `build` are cross-platform (macOS, Linux, Windows) because they use Node scripts.
+On non-macOS systems, macOS-specific post-processing is skipped automatically.
 
 Build output in `dist/` for:
 
@@ -85,3 +88,32 @@ npm run version:sync
 
 The FX API key is provided by the user in the app Settings UI and stored only for the current webview session.
 `resources/api-keys` is no longer required.
+
+## Releases (GitHub)
+
+Recommended flow:
+
+1. Bump version in `package.json`.
+2. Commit changes and create a Git tag.
+3. Build release artifacts.
+4. Create a GitHub Release and upload files from `dist/`.
+
+Example commands:
+
+```bash
+# 1) update version in package.json, then:
+git add package.json package-lock.json neutralino.config.json resources/index.html
+git commit -m "release: v0.9.7"
+
+# 2) tag
+git tag v0.9.7
+git push origin main --tags
+
+# 3) build artifacts
+./scripts/build-all.sh
+
+# 4) publish release (GitHub CLI)
+gh release create v0.9.7 dist/**/* \
+	--title "v0.9.7" \
+	--notes "Release v0.9.7"
+```
