@@ -25,6 +25,7 @@ const fxKeyForm = document.getElementById("fx-key-form");
 const fxKeyInput = document.getElementById("freecurrency-key");
 const fxKeyStatus = document.getElementById("fx-key-status");
 const fxIndicator = document.getElementById("fx-api-status");
+const networkStatusEl = document.getElementById("network-status");
 const fxKeyClearBtn = document.getElementById("clear-freecurrency-key");
 const gistKeyForm = document.getElementById("gist-key-form");
 const gistKeyInput = document.getElementById("gist-token");
@@ -587,20 +588,41 @@ function formatTime(date) {
   )}`;
 }
 
+function formatElapsedCompact(fromTimestamp) {
+  if (!fromTimestamp) return null;
+  const elapsedMs = Math.max(0, Date.now() - fromTimestamp);
+  const totalMinutes = Math.floor(elapsedMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours <= 0) return `${minutes}m`;
+  return `${hours}h ${minutes}m`;
+}
+
 // --- FX HELPERS / API KEYS ---
 // --- FX CACHE (SESSION) ---
 
 function getFreeCurrencyCookieKey() {
-  const key = sessionStorage.getItem(freeCurrencyCookieKey);
-  return key ? key.trim() : null;
+  const persistedKey = getCookie(freeCurrencyCookieKey);
+  if (persistedKey) return persistedKey.trim();
+
+  const sessionKey = sessionStorage.getItem(freeCurrencyCookieKey);
+  if (!sessionKey) return null;
+
+  const trimmedSessionKey = sessionKey.trim();
+  const oneYear = 60 * 60 * 24 * 365;
+  setCookie(freeCurrencyCookieKey, trimmedSessionKey, oneYear);
+  sessionStorage.removeItem(freeCurrencyCookieKey);
+  return trimmedSessionKey;
 }
 
 function setFreeCurrencyCookieKey(key) {
   if (!key) return;
-  sessionStorage.setItem(freeCurrencyCookieKey, key);
+  const oneYear = 60 * 60 * 24 * 365;
+  setCookie(freeCurrencyCookieKey, key, oneYear);
 }
 
 function clearFreeCurrencyCookieKey() {
+  deleteCookie(freeCurrencyCookieKey);
   sessionStorage.removeItem(freeCurrencyCookieKey);
 }
 
@@ -701,6 +723,59 @@ function isCacheFresh(payload) {
   if (!payload?.ts) return false;
   const ageMs = Date.now() - payload.ts;
   return ageMs < 60 * 60 * 1000;
+}
+
+function getBestLocalFxSnapshot() {
+  const cached = getCachedSessionRate();
+  if (cached && Number.isFinite(cached.rate) && Number.isFinite(cached.ts)) {
+    return { rate: cached.rate, ts: cached.ts };
+  }
+
+  const intraday = getIntradayCache();
+  if (!intraday?.points?.length) return null;
+  const lastPoint = intraday.points[intraday.points.length - 1];
+  if (!lastPoint || !Number.isFinite(lastPoint.r)) return null;
+  const ts = new Date(lastPoint.t).getTime();
+  if (!Number.isFinite(ts)) return null;
+  return { rate: lastPoint.r, ts };
+}
+
+function updateNetworkStatus(lastDataTimestamp = null) {
+  if (!networkStatusEl) return;
+  const online = navigator.onLine;
+  networkStatusEl.classList.toggle("online", online);
+  networkStatusEl.classList.toggle("offline", !online);
+
+  if (online) {
+    networkStatusEl.textContent = "Online";
+    return;
+  }
+
+  if (!lastDataTimestamp) {
+    networkStatusEl.textContent = "Offline · no data";
+    return;
+  }
+
+  const age = formatElapsedCompact(lastDataTimestamp);
+  networkStatusEl.textContent = age ? `Offline · dati vecchi ${age}` : "Offline · dati vecchi";
+}
+
+function applyFxSnapshot(snapshot, stale = false) {
+  if (!snapshot || !Number.isFinite(snapshot.rate)) return false;
+  const when = Number.isFinite(snapshot.ts) ? new Date(snapshot.ts) : new Date();
+  fxPriceEl.textContent = snapshot.rate.toFixed(4);
+
+  const staleSuffix = stale
+    ? ` · dati vecchi ${formatElapsedCompact(when.getTime()) || ""}`.trimEnd()
+    : "";
+  fxUpdatedEl.textContent = `Aggiornamento: ${formatDate(when)} ${formatTime(when)}${staleSuffix}`;
+
+  if (fxStatusEl) {
+    fxStatusEl.classList.toggle("cached", stale);
+  }
+  addIntradayPoint(snapshot.rate);
+  updateNetworkStatus(when.getTime());
+  return true;
 }
 
 // --- FX API KEY (SESSIONE UTENTE) ---
@@ -855,18 +930,22 @@ function ensureFxHistory() {
 async function fetchFxLatest() {
   if (!fxPriceEl || !fxChangeEl || !fxUpdatedEl) return;
   try {
+    const localSnapshot = getBestLocalFxSnapshot();
+    updateNetworkStatus(localSnapshot?.ts || null);
+
+    if (!navigator.onLine) {
+      if (!applyFxSnapshot(localSnapshot, true) && fxUpdatedEl) {
+        fxUpdatedEl.textContent = "Aggiornamento: offline, nessun dato locale";
+      }
+      return;
+    }
+
     if (fxStatusEl) fxStatusEl.classList.remove("cached");
 
     // Check local session cache (1 hour duration)
     const cached = getCachedSessionRate();
     if (cached && isCacheFresh(cached)) {
-      fxPriceEl.textContent = cached.rate.toFixed(4);
-      const cachedDate = new Date(cached.ts);
-      fxUpdatedEl.textContent = `Aggiornamento: ${formatDate(cachedDate)} ${formatTime(
-        cachedDate
-      )}`;
-      if (fxStatusEl) fxStatusEl.classList.add("cached");
-      addIntradayPoint(cached.rate);
+      applyFxSnapshot({ rate: cached.rate, ts: cached.ts }, true);
       return;
     }
     // Prefer FreeCurrencyAPI (key inserita dall'utente in questa sessione)
@@ -892,19 +971,20 @@ async function fetchFxLatest() {
 
       if (!rate || isNaN(rate)) {
         console.warn('No rate retrieved from FreeCurrencyAPI');
+        applyFxSnapshot(localSnapshot, true);
         return; // nothing to show
       }
 
       setCachedSessionRate(rate);
-      fxPriceEl.textContent = rate.toFixed(4);
-      fxUpdatedEl.textContent = `Aggiornamento: ${formatDate(new Date())} ${formatTime(new Date())}`;
-      if (fxStatusEl) fxStatusEl.classList.remove('cached');
-      addIntradayPoint(rate);
+      applyFxSnapshot({ rate, ts: Date.now() }, false);
     } catch (err) {
       console.error(err);
+      applyFxSnapshot(localSnapshot, true);
     }
   } catch (error) {
     console.error(error);
+    const localSnapshot = getBestLocalFxSnapshot();
+    applyFxSnapshot(localSnapshot, true);
   }
 }
 
@@ -1086,14 +1166,13 @@ function drawFxChart() {
   ctx.textAlign = "right";
   ctx.fillText(max.toFixed(4), width - padding, padding - 6 * ratio);
 
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
   ctx.fillText(
-    `Media 7g: ${weekAvg.toFixed(4)}  ·  Media 30g: ${monthAvg.toFixed(4)}`,
-    width / 2,
-    padding - 6 * ratio
+    `Medie: 7gg ${weekAvg.toFixed(4)} · 30gg ${monthAvg.toFixed(4)} · periodo ${avg.toFixed(4)}`,
+    padding,
+    Math.max(2 * ratio, padding - 14 * ratio)
   );
-
-  ctx.fillText(`Media periodo: ${avg.toFixed(4)}`, width / 2, avgY - 6 * ratio);
 }
 
 function setupFxChartTooltip() {
@@ -1407,6 +1486,23 @@ function initDashboard() {
     });
   }
 
+  window.addEventListener("online", () => {
+    updateNetworkStatus(getBestLocalFxSnapshot()?.ts || null);
+    fetchFxLatest();
+  });
+
+  window.addEventListener("offline", () => {
+    const snapshot = getBestLocalFxSnapshot();
+    updateNetworkStatus(snapshot?.ts || null);
+    applyFxSnapshot(snapshot, true);
+  });
+
+  setInterval(() => {
+    if (!navigator.onLine) {
+      updateNetworkStatus(getBestLocalFxSnapshot()?.ts || null);
+    }
+  }, 60000);
+
   // Tabs are now initialised in main.js via tabs.js module
 
   if (fxKeyForm) {
@@ -1476,6 +1572,7 @@ function initDashboard() {
   updateFxKeyStatus();
   updateGistKeyStatus();
   updateGistUrlStatus();
+  updateNetworkStatus(getBestLocalFxSnapshot()?.ts || null);
 }
 
 export { initDashboard };

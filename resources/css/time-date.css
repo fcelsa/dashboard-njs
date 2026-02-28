@@ -166,12 +166,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
+  width: 32px;
+  min-width: 32px;
+  align-self: stretch;
 }
 
 .nav-indicator {
-  min-height: 20px;
-  font-size: 19px;
+  min-height: 16px;
+  font-size: 16px;
   line-height: 1;
   color: var(--accent);
   font-weight: bold;
