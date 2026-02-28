@@ -14,6 +14,10 @@ import './calculator.js';
 import './calc-sheet.js';
 import './time-date-manager.js';
 
+if (window.Neutralino?.init) {
+  window.Neutralino.init();
+}
+
 // --- Theme ---
 restoreTheme();
 bindThemeSelect(document.getElementById('theme-select'));

@@ -5,6 +5,8 @@ import { spawn } from 'node:child_process';
 
 const rootDir = process.cwd();
 const configPath = path.join(rootDir, 'neutralino.config.json');
+const nodeBinDir = path.dirname(process.execPath);
+const npmCliPath = path.join(nodeBinDir, 'node_modules', 'npm', 'bin', 'npm-cli.js');
 
 function readConfig() {
   const raw = fs.readFileSync(configPath, 'utf8');
@@ -165,9 +167,16 @@ async function main() {
     }
   }
 
-  const npxBin = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const args = ['@neutralinojs/neu', 'run', ...process.argv.slice(2)];
-  const child = spawn(npxBin, args, { stdio: 'inherit', shell: false });
+  const command = process.platform === 'win32' && fs.existsSync(npmCliPath)
+    ? {
+        cmd: process.execPath,
+        args: [npmCliPath, 'exec', '--', '@neutralinojs/neu', 'run', ...process.argv.slice(2)]
+      }
+    : {
+        cmd: 'npx',
+        args: ['@neutralinojs/neu', 'run', ...process.argv.slice(2)]
+      };
+  const child = spawn(command.cmd, command.args, { stdio: 'inherit', shell: false });
 
   child.on('exit', (code) => process.exit(code ?? 0));
   child.on('error', (err) => {

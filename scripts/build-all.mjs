@@ -19,14 +19,20 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
+const nodeBinDir = path.dirname(process.execPath);
+const npmCliPath = path.join(nodeBinDir, 'node_modules', 'npm', 'bin', 'npm-cli.js');
 
 function run(cmd, args, options = {}) {
   const result = spawnSync(cmd, args, {
     cwd: rootDir,
     stdio: 'inherit',
-    shell: process.platform === 'win32',
+    shell: false,
     ...options
   });
+  if (result.error) {
+    console.error(result.error.message);
+    process.exit(1);
+  }
   if ((result.status ?? 1) !== 0) {
     process.exit(result.status ?? 1);
   }
@@ -36,7 +42,7 @@ function runNoThrow(cmd, args, options = {}) {
   return spawnSync(cmd, args, {
     cwd: rootDir,
     stdio: 'ignore',
-    shell: process.platform === 'win32',
+    shell: false,
     ...options
   });
 }
@@ -176,16 +182,38 @@ const config = JSON.parse(readFileSync(configPath, 'utf8'));
 config.applicationIcon = 'assets/icon/app-icon.png';
 writeFileSync(buildConfigPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
 
-run('npx', [
+const neuBuildArgs = [
   '@neutralinojs/neu',
   'build',
   '--release',
   '--embed-resources',
-  '--macos-bundle',
   '--clean',
   '--config-file',
   buildConfigPath
-]);
+];
+
+if (process.platform === 'darwin') {
+  neuBuildArgs.splice(4, 0, '--macos-bundle');
+}
+
+console.log(`macOS bundle: ${process.platform === 'darwin' ? 'enabled' : 'disabled'}`);
+
+const neuBuildCommand = process.platform === 'win32' && existsSync(npmCliPath)
+  ? {
+      cmd: process.execPath,
+      args: [
+        npmCliPath,
+        'exec',
+        '--',
+        ...neuBuildArgs
+      ]
+    }
+  : {
+      cmd: 'npx',
+      args: neuBuildArgs
+    };
+
+run(neuBuildCommand.cmd, neuBuildCommand.args);
 rmSync(buildConfigPath, { force: true });
 
 console.log('[3/4] Keep only requested targets');
@@ -201,7 +229,9 @@ const keepFiles = [
   'dashboard-njs-win_x64',
   'dashboard-njs-linux_x64'
 ];
-const keepDirs = ['dashboard-njs-mac_arm64.app', 'dashboard-njs-mac_x64.app'];
+const keepDirs = process.platform === 'darwin'
+  ? ['dashboard-njs-mac_arm64.app', 'dashboard-njs-mac_x64.app']
+  : [];
 
 for (const entry of readdirSync(distRoot, { withFileTypes: true })) {
   const entryPath = path.join(distRoot, entry.name);
@@ -219,6 +249,7 @@ for (const entry of readdirSync(distRoot, { withFileTypes: true })) {
 
 console.log('[4/4] Post-processing platform artifacts');
 const pkg = JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
+console.log(`macOS post-processing: ${process.platform === 'darwin' ? 'enabled' : 'disabled'}`);
 if (process.platform === 'darwin') {
   createMacBundle(path.join(distRoot, 'dashboard-njs-mac_arm64.app'), 'it.fcs.dashboardnjs.macarm64', pkg.version);
   createMacBundle(path.join(distRoot, 'dashboard-njs-mac_x64.app'), 'it.fcs.dashboardnjs.macx64', pkg.version);

@@ -783,7 +783,7 @@ function getHistoryRange() {
   const end = new Date();
   const start = new Date();
   start.setFullYear(end.getFullYear() - 1);
-  return { start: formatDate(start), end: formatDate(end) };
+  return { start: formatDateLocal(start), end: formatDateLocal(end) };
 }
 
 function readCachedHistory() {
@@ -830,6 +830,10 @@ async function fetchFxHistory() {
     updateFxTrend();
   } catch (error) {
     console.error(error);
+    if (fxChangeEl) {
+      fxChangeEl.textContent = "Grafico FX non disponibile";
+      fxChangeEl.classList.add("negative");
+    }
   }
 }
 
@@ -1225,6 +1229,18 @@ function scheduleIntradayRefresh() {
   }, timeout);
 }
 
+async function openExternalLink(url) {
+  if (!url || !/^https?:\/\//i.test(url)) {
+    throw new Error("URL non valido");
+  }
+
+  if (!window.Neutralino?.os?.open) {
+    throw new Error("API Neutralino os.open non disponibile");
+  }
+
+  await window.Neutralino.os.open(url);
+}
+
 // --- INIT / LISTENERS ---
 function initDashboard() {
   monthsContainer.addEventListener("wheel", handleWheel, { passive: false });
@@ -1289,6 +1305,34 @@ function initDashboard() {
   if (fxCardEl) {
     fxCardEl.addEventListener("click", () => {
       document.body.classList.toggle("show-trading");
+    });
+  }
+
+  const tradingPanel = document.getElementById("trading-panel");
+  if (tradingPanel) {
+    tradingPanel.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    const tradingLinks = tradingPanel.querySelectorAll("a[href]");
+    tradingLinks.forEach((link) => {
+      link.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          await openExternalLink(link.href);
+        } catch (error) {
+          console.error("Errore apertura link esterno", error);
+          if (fxUpdatedEl) {
+            fxUpdatedEl.textContent = "Errore apertura link esterno";
+          }
+          if (fxChangeEl) {
+            fxChangeEl.textContent = "Controlla permessi Native API / browser predefinito";
+            fxChangeEl.classList.add("negative");
+          }
+          alert("Impossibile aprire il link esterno. Verifica browser predefinito e permessi Native API.");
+        }
+      });
     });
   }
 

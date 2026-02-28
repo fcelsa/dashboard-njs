@@ -5,7 +5,7 @@
   "defaultMode": "window",
   "port": 59210,
   "enableServer": true,
-  "enableNativeAPI": false,
+  "enableNativeAPI": true,
   "tokenSecurity": "one-time",
   "url": "/index.html",
   "documentRoot": "/resources/",

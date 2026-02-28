@@ -1465,12 +1465,12 @@ body {
 
 .app {
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 410px 1fr;
   gap: 10px;
   padding: 10px;
-  height: 1020px;
-  max-height: 1020px;
-  width: 1560px;
+  height: 960px;
+  max-height: 960px;
+  width: 1536px;
   margin: 0 auto;
   overflow: hidden;
 }
@@ -1576,20 +1576,20 @@ body {
 .left-column {
   display: grid;
   grid-template-rows: 1fr auto;
-  gap: 12px;
-  width: 420px;
+  gap: 10px;
+  width: 410px;
 }
 
 .right-column {
   display: grid;
-  grid-template-columns: 780px 318px;
+  grid-template-columns: 768px 310px;
   grid-template-rows: auto auto 1fr;
   grid-template-areas:
     "time status"
     "fx status"
     "calc calc";
-  gap: 12px;
-  width: 1110px;
+  gap: 10px;
+  width: 1088px;
 }
 
 .settings-content {
@@ -1662,6 +1662,10 @@ body {
 }
 
 .calendar-panel {
+  height: fit-content;
+  min-height: 0;
+  padding: 4px;
+  gap: 6px;
   overflow: hidden;
   font-family: "Droid Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
@@ -1742,8 +1746,8 @@ body {
 .months {
   display: grid;
   grid-auto-rows: max-content;
-  gap: 8px;
-  padding-right: 4px;
+  gap: 6px;
+  padding: 4px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -1762,7 +1766,7 @@ body {
 .month-card {
   background: var(--panel-soft);
   border-radius: 16px;
-  padding: 10px 12px;
+  padding: 6px 10px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
@@ -1878,6 +1882,7 @@ body {
   flex-direction: row;
   align-items: center;
   height: 64px;
+  width: 100%;
   padding: 0 12px;
 }
 
@@ -1966,7 +1971,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 780px;
+  width: 100%;
 }
 
 .fx-card {
@@ -1976,10 +1981,11 @@ body {
   align-items: center;
   background: var(--panel-soft);
   border-radius: 16px;
+  width: 100%;
   padding: 8px 12px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   cursor: pointer;
-  height: 200px;
+  height: 184px;
   box-sizing: border-box;
 }
 
@@ -2162,7 +2168,7 @@ body.show-trading .calculator-panel {
 
 .fx-chart {
   width: 100%;
-  height: 180px;
+  height: 170px;
   background: #101319;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2180,6 +2186,7 @@ body.show-trading .calculator-panel {
   background: var(--panel-gradient, linear-gradient(150deg, #242a36, #1b2028));
   transition: transform 0.45s ease;
   padding: 0;
+  gap: 6px;
   overflow: hidden;
 }
 
@@ -2247,14 +2254,14 @@ body.show-trading .calculator-panel {
 .tab-panels {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 8px;
+  gap: 12px;
+  padding: 6px;
 }
 
 .tab-panel {
   display: none;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .tab-panel.active {
@@ -2272,8 +2279,8 @@ body.show-trading .calculator-panel {
 .calculator-base {
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 16px;
-  padding: 16px;
+  gap: 12px;
+  padding: 12px;
   border-radius: 18px;
   background: #1b212b;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
