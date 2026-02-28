@@ -4,7 +4,6 @@ import { isHoliday } from './time-date-manager.js';
 import {
   registerCalendarView,
   initCalendarViews,
-  setCalendarView,
   getCalendarView,
 } from './ui/calendar-views.js';
 import { getTheme } from './ui/theme.js';

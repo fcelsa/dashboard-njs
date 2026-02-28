@@ -15,9 +15,7 @@ import {
   clearAllHistory
 } from './utils/calc-history-db.js';
 import {
-  getGistToken,
   getDashboardState,
-  restoreDashboardState,
   saveToGistUrl,
   loadFromGistUrl
 } from './utils/dashboard-sync.js';

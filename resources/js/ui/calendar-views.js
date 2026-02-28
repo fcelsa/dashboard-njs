@@ -62,14 +62,6 @@ export function getCalendarView() {
   return activeViewId;
 }
 
-/**
- * Get all registered view ids.
- * @returns {string[]}
- */
-export function getCalendarViewIds() {
-  return [...views.keys()];
-}
-
 /** Update toggle button label to current view name. */
 function updateToggleLabel() {
   if (!toggleBtn) return;
