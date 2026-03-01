@@ -3,16 +3,12 @@ import { getCookie, setCookie } from './utils/cookies.js';
 import {
   initCalcHistoryDB,
   saveCurrentState,
-  loadCurrentState,
-  addHistorySnapshot,
-  getAllHistorySnapshots,
   formatTimestamp,
   saveUserSnapshot,
   getAllUserSnapshots,
   getUserSnapshot,
   deleteUserSnapshot,
-  getUserSnapshotCount,
-  clearAllHistory
+    getUserSnapshotCount
 } from './utils/calc-history-db.js';
 import {
   getDashboardState,
@@ -147,6 +143,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         return hasCalculatorKeyboardFocus();
     };
 
+    const FOCUS_DEBUG = true;
+
+    const describeElement = (el) => {
+        if (!el) return 'null';
+        const id = el.id ? `#${el.id}` : '';
+        const className = typeof el.className === 'string' && el.className.trim()
+            ? `.${el.className.trim().split(/\s+/).join('.')}`
+            : '';
+        return `${el.tagName}${id}${className}`;
+    };
+
+    const logFocusDebug = (label, extra = {}) => {
+        if (!FOCUS_DEBUG || !window.__focusDebugEnabled) return;
+        const payload = {
+            tabActive: isCalculatorTabActive(),
+            calculatorFocused: hasCalculatorKeyboardFocus(),
+            activeElement: describeElement(document.activeElement),
+            ...extra
+        };
+        console.debug('[calculator-focus]', label, payload);
+        if (window.__focusDebugLog) {
+            window.__focusDebugLog('calculator-focus', label, payload);
+        }
+    };
+
     function syncCalculatorFocusLed() {
         if (!calculatorWrapper) return;
         const isOn = isCalculatorTabActive() && hasCalculatorKeyboardFocus();
@@ -154,13 +175,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function focusCalculatorWrapper() {
-        if (!calculatorWrapper || !isCalculatorTabActive()) return;
+        if (!calculatorWrapper || !isCalculatorTabActive()) {
+            logFocusDebug('focusCalculatorWrapper:skip');
+            return;
+        }
+        logFocusDebug('focusCalculatorWrapper:before');
         try {
             calculatorWrapper.focus({ preventScroll: true });
         } catch {
             calculatorWrapper.focus();
         }
         syncCalculatorFocusLed();
+        logFocusDebug('focusCalculatorWrapper:after');
     }
 
     function focusCalculatorWrapperDeferred(delayMs = 0) {
@@ -171,10 +197,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, delayMs);
     }
 
+    function hasEditableFocus() {
+        const activeEl = document.activeElement;
+        if (!activeEl) return false;
+        if (activeEl === calculatorWrapper || activeEl === document.body || activeEl === document.documentElement) {
+            return false;
+        }
+        const tagName = activeEl.tagName;
+        return (
+            tagName === 'INPUT' ||
+            tagName === 'TEXTAREA' ||
+            tagName === 'SELECT' ||
+            activeEl.isContentEditable
+        );
+    }
+
     if (calculatorWrapper) {
-        calculatorWrapper.addEventListener('focusin', syncCalculatorFocusLed);
+        calculatorWrapper.addEventListener('focusin', () => {
+            syncCalculatorFocusLed();
+            logFocusDebug('wrapper:focusin');
+        });
         calculatorWrapper.addEventListener('focusout', () => {
             setTimeout(syncCalculatorFocusLed, 0);
+            logFocusDebug('wrapper:focusout');
         });
     }
 
@@ -449,8 +494,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 500);
     }
 
-    engine.onBeforeClearAll = handleBeforeClearAll;
-
     // --- TAPE VIEW ---
     keys.forEach((btn) => {
         const dataKey = btn.getAttribute("data-key");
@@ -464,6 +507,39 @@ document.addEventListener("DOMContentLoaded", async () => {
         const buttons = keyButtonsMap.get(action);
         if (!buttons) return;
         buttons.forEach((btn) => btn.classList.toggle("active", active));
+    }
+
+    const transientKeyboardActions = new Set(['#', 'S_SAVE', 'S_LOAD']);
+    let lastKeyboardActiveAction = null;
+
+    function activateKeyboardKey(action, keyboardEvent) {
+        if (!action) return;
+
+        const hasModifier = !!(keyboardEvent?.altKey || keyboardEvent?.ctrlKey || keyboardEvent?.metaKey);
+        const useTransient = transientKeyboardActions.has(action) || hasModifier;
+
+        setKeyActive(action, true);
+
+        if (useTransient) {
+            setTimeout(() => setKeyActive(action, false), 90);
+            return;
+        }
+
+        lastKeyboardActiveAction = action;
+    }
+
+    function releaseKeyboardKey(action) {
+        if (action) {
+            setKeyActive(action, false);
+            if (lastKeyboardActiveAction === action) {
+                lastKeyboardActiveAction = null;
+            }
+        }
+
+        if (lastKeyboardActiveAction && lastKeyboardActiveAction !== action) {
+            setKeyActive(lastKeyboardActiveAction, false);
+            lastKeyboardActiveAction = null;
+        }
     }
 
     const businessKeys = new Set(['COST', 'SELL', 'MARGIN', 'MARKUP', 'TAX+', 'TAX-']);
@@ -732,148 +808,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // --- HISTORY / SNAPSHOTS ---
-    const historyIconsContainer = document.getElementById("calc-history-icons");
-    
-    /**
-     * Save current state and history snapshots to indexedDB
-     */
-    async function saveAllStates() {
-        try {
-            const snapshot = engine.getStateSnapshot();
-            await saveCurrentState(snapshot);
-        } catch (err) {
-            console.error("Error saving calculator state:", err);
-        }
-    }
-
-    /**
-     * Update the history icons display
-     */
-    async function renderHistoryIcons() {
-        try {
-            if (!historyIconsContainer) return;
-            const snapshots = await getAllHistorySnapshots();
-            historyIconsContainer.innerHTML = "";
-            
-            snapshots.slice(0, 8).forEach((snapshot, index) => {
-                const icon = document.createElement("button");
-                icon.className = "calc-history-icon";
-                icon.type = "button";
-                
-                // Number: 1 is most recent, 8 is oldest
-                const progressiveNumber = index + 1;
-                const timestamp = formatTimestamp(snapshot.timestamp);
-                
-                // Build preview: show number of entries and last value
-                const entriesCount = snapshot.entries ? snapshot.entries.length : 0;
-                const lastValue = snapshot.accumulator || snapshot.grandTotal || snapshot.currentInput || "0";
-                const preview = `[${entriesCount} entries]\nAcc: ${lastValue}`;
-                
-                icon.textContent = `${progressiveNumber}`;
-                icon.setAttribute("data-tooltip", `${timestamp}\n${preview}`);
-                icon.dataset.snapshotId = snapshot.id;
-                icon.addEventListener("click", () => restoreFromHistory(snapshot.id));
-                
-                // Add tooltip event listeners
-                icon.addEventListener("mouseover", (e) => showTooltip(e));
-                icon.addEventListener("mouseleave", () => hideTooltip());
-                
-                historyIconsContainer.appendChild(icon);
-            });
-        } catch (err) {
-            console.error("Error rendering history icons:", err);
-        }
-    }
-
-    /**
-     * Show tooltip for history icon
-     */
-    function showTooltip(evt) {
-        const icon = evt.target.closest(".calc-history-icon");
-        if (!icon) return;
-        
-        const tooltipText = icon.getAttribute("data-tooltip");
-        if (!tooltipText) return;
-        
-        // Remove any existing tooltip
-        hideTooltip();
-        
-        // Create tooltip element
-        const tooltip = document.createElement("div");
-        tooltip.className = "calc-history-tooltip";
-        tooltip.textContent = tooltipText;
-        document.body.appendChild(tooltip);
-        
-        // Position tooltip
-        const rect = icon.getBoundingClientRect();
-        const tooltipRect = tooltip.getBoundingClientRect();
-        
-        // Position above the icon, centered
-        let top = rect.top - tooltipRect.height - 8;
-        let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
-        
-        // Adjust if off-screen (right side)
-        if (left + tooltipRect.width > window.innerWidth - 8) {
-            left = window.innerWidth - tooltipRect.width - 8;
-        }
-        // Adjust if off-screen (left side)
-        if (left < 8) {
-            left = 8;
-        }
-        // If no space above, show below
-        if (top < 8) {
-            top = rect.bottom + 8;
-        }
-        
-        tooltip.style.top = `${top}px`;
-        tooltip.style.left = `${left}px`;
-        
-        // Store reference for cleanup
-        tooltip.dataset.tooltipId = Date.now();
-        icon.dataset.activeTooltipId = tooltip.dataset.tooltipId;
-    }
-
-    /**
-     * Hide tooltip for history icon
-     */
-    function hideTooltip() {
-        const existingTooltip = document.querySelector(".calc-history-tooltip");
-        if (existingTooltip) {
-            existingTooltip.remove();
-        }
-    }
-
-    /**
-     * Restore calculator from a history snapshot
-     */
-    async function restoreFromHistory(snapshotId) {
-        try {
-            const { getHistorySnapshot } = await import('./utils/calc-history-db.js');
-            const snapshot = await getHistorySnapshot(snapshotId);
-            if (!snapshot) return;
-            engine.restoreStateSnapshot(snapshot);
-            await saveAllStates(); // Update current state
-        } catch (err) {
-            console.error("Error restoring from history:", err);
-        }
-    }
-
-    /**
-     * Handle before-clear callback: save state as history snapshot
-     */
-    async function handleBeforeClearAll(snapshot) {
-        try {
-            // Only save if there were entries (non-empty calculation)
-            if (snapshot.entries && snapshot.entries.length > 0) {
-                await addHistorySnapshot(snapshot);
-                await renderHistoryIcons();
-            }
-        } catch (err) {
-            console.error("Error adding history snapshot:", err);
-        }
-    }
-
+    // --- SNAPSHOTS ---
     // --- UTILS ---
 
     // Standard JS uses decimal point. 
@@ -998,6 +933,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             triggerClearFeedback(forcePaperReset);
         }
 
+        if (engineKey === 'S_SAVE') {
+            showSaveDialog();
+            return;
+        }
+
+        if (engineKey === 'S_LOAD') {
+            showLoadDialog();
+            return;
+        }
+
         if (rateEditActive && (engineKey === '=' || engineKey === 'Enter')) {
             pendingRateInput = false;
             rateEditActive = false;
@@ -1050,6 +995,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (key.toLowerCase() === 'd') return 'Δ';
         if (key.toLowerCase() === 'r') return '√';
         if (key.toLowerCase() === 'p') return '^';
+        if (key.toLowerCase() === 'a') return 'S_SAVE';
+        if (key.toLowerCase() === 'z') return 'S_LOAD';
         return null;
     }
     
@@ -1107,10 +1054,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
         }
-        if (!isCalculatorFocused()) {
+        const action = mapKeyboardToAction(event);
+        const isFocused = isCalculatorFocused();
+        const isMappedAction = Boolean(action);
+        if (!isFocused && !isMappedAction && !pendingMemoryChord && !pendingGTChord) {
             return;
         }
-        if (isCalculatorFocused() && paperTape && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+        if (isMappedAction && !isFocused) {
+            focusCalculatorWrapperDeferred(0);
+        }
+        if ((isFocused || isMappedAction) && paperTape && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
             event.preventDefault();
             const delta = event.key === 'ArrowUp' ? -40 : 40;
             paperTape.scrollTop += delta;
@@ -1246,9 +1199,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const action = mapKeyboardToAction(event);
         const isPlainKey = !event.metaKey && !event.ctrlKey && !event.altKey;
-        if (isCalculatorFocused() && !action && isPlainKey) {
+        if ((isFocused || isMappedAction) && !action && isPlainKey) {
             event.preventDefault();
             event.stopPropagation();
             return;
@@ -1262,7 +1214,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (event.key === '0' && (event.ctrlKey || event.altKey)) {
             event.preventDefault();
         }
-        setKeyActive(action, true);
+        activateKeyboardKey(action, event);
         if (action) handleInput(action, true);
     }
 
@@ -1277,36 +1229,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
         }
-        if (!isCalculatorFocused()) {
+        const action = mapKeyboardToAction(event);
+        if (!isCalculatorFocused() && !action) {
             return;
         }
-        const action = mapKeyboardToAction(event);
-        setKeyActive(action, false);
+        releaseKeyboardKey(action);
     }
-
-    // Render history icons at startup
-    renderHistoryIcons();
 
     // --- SAVE/LOAD USER SNAPSHOTS ---
-    const calcSaveBtn = document.getElementById("calc-save-btn");
-    const calcLoadBtn = document.getElementById("calc-load-btn");
-    const calcClearHistoryBtn = document.getElementById("calc-clear-history-btn");
-    
-    if (calcSaveBtn) {
-        calcSaveBtn.addEventListener("click", showSaveDialog);
-    }
-    if (calcLoadBtn) {
-        calcLoadBtn.addEventListener("click", showLoadDialog);
-    }
-    if (calcClearHistoryBtn) {
-        calcClearHistoryBtn.addEventListener("click", async () => {
-            if (confirm("Sei sicuro di voler svuotare la cronologia delle sessioni?")) {
-                await clearAllHistory();
-                await renderHistoryIcons();
-            }
-        });
-    }
-
     /**
      * Show save dialog with name input
      */
@@ -1511,14 +1441,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (calculatorWrapper) {
         calculatorWrapper.addEventListener("pointerdown", focusCalculatorWrapper);
-        calculatorWrapper.addEventListener("mouseenter", () => {
-            focusCalculatorWrapperDeferred(0);
+        calculatorWrapper.addEventListener("pointerenter", () => {
+            calculatorWrapper.classList.add('is-pointer-over');
+            syncCalculatorFocusLed();
+        });
+        calculatorWrapper.addEventListener("pointerleave", () => {
+            calculatorWrapper.classList.remove('is-pointer-over');
+            syncCalculatorFocusLed();
         });
     }
-
-    // Ensure keyboard focus is on calculator at startup (when calculator tab is active)
-    focusCalculatorWrapperDeferred(0);
-    focusCalculatorWrapperDeferred(120);
 
     // Restore keyboard focus whenever calculator tab becomes active
     const calculatorTabButton = document.querySelector('.tab-btn[data-tab="calculator"]');
@@ -1531,6 +1462,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.addEventListener('app:tab-changed', (event) => {
         const tabId = event?.detail?.tabId;
+        logFocusDebug('app:tab-changed', { tabId });
         if (tabId === 'calculator') {
             focusCalculatorWrapperDeferred(0);
             focusCalculatorWrapperDeferred(80);
@@ -1540,6 +1472,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     document.addEventListener('visibilitychange', syncCalculatorFocusLed);
+    window.addEventListener('blur', () => releaseKeyboardKey(lastKeyboardActiveAction));
     bindTaxRateLongPress();
 
     // 2. Keyboard Input

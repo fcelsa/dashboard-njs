@@ -94,7 +94,7 @@
               Online
             </div>
             <div class="status-meta" id="settings-meta" aria-live="polite">
-              <div class="settings-build">ver. 0.9.6</div>
+              <div class="settings-build">ver. 0.9.7</div>
             </div>
           </div>
         </div>
@@ -274,33 +274,26 @@
                       <button class="key-btn key-square key-cyan" data-key="÷">÷</button>
                       <button class="key-btn key-square key-cyan" data-key="^" title="Potenza (Tasto: ^ o p)">xʸ</button>
                       <button class="key-btn key-square key-light-green" data-key="MC" title="Memory Clear">MC</button>
+                      <button class="key-btn key-square key-light-green" data-key="S_SAVE" title="Salva esplicitamente il calcolo corrente (Tasto: A)">SALVA</button>
 
-                      <button class="key-btn key-square key-green" data-key="-">-</button>
+                      <button class="key-btn key-square key-cyan" data-key="-">-</button>
                       <button class="key-btn key-square key-cyan" data-key="%">%</button>
                       <button class="key-btn key-square key-cyan" data-key="√" title="Radice Quadrata (Tasto: r)">√</button>
                       <button class="key-btn key-square key-light-green" data-key="MR" title="Memory Recall">MR</button>
+                      <button class="key-btn key-square key-light-green" data-key="S_LOAD" title="Richiama un calcolo salvato (Tasto: Z)">RICH</button>
 
-                      <button class="key-btn key-square key-green" data-key="+">+</button>
+                      <button class="key-btn key-square key-cyan" data-key="+">+</button>
                       <button class="key-btn key-square key-cyan" data-key="Δ" title="Variazione % (Tasto: d)">Δ</button>
-                      <button class="key-btn key-square key-green" data-key="GT" title="Grand Total">GT</button>
+                      <button class="key-btn key-square key-cyan" data-key="GT" title="Grand Total">GT</button>
                       <button class="key-btn key-square key-light-green" data-key="M-" title="Memory Minus">M-</button>
+                      <span class="calc-key-spacer" aria-hidden="true"></span>
 
-                      <button class="key-btn key-square key-cyan key-double-h" data-key="=">=</button>
+                      <button class="key-btn key-square key-green key-double-h" data-key="=">=</button>
                       <button class="key-btn key-square key-cyan" data-key="#" title="Non-Add / Data (Tasto: #)">#</button>
                       <button class="key-btn key-square key-light-green" data-key="M+" title="Memory Plus">M+</button>
+                      <span class="calc-key-spacer" aria-hidden="true"></span>
                     </div>
                   </div> <!-- close calc-main-keys -->
-                </div>
-                <!-- History Snapshots (Sotto Calc Body) -->
-                <div class="calc-history-container">
-                  <div class="calc-history-controls">
-                    <button type="button" id="calc-save-btn" class="calc-save-btn" title="Salva il calcolo con un nome personalizzato">Salva</button>
-                    <button type="button" id="calc-load-btn" class="calc-load-btn" title="Carica un calcolo salvato">Richiama</button>
-                    <button type="button" id="calc-clear-history-btn" class="calc-save-btn" title="Svuota cronologia sessioni">Svuota</button>
-                  </div>
-                  <div class="calc-history-icons" id="calc-history-icons">
-                    <!-- JS will append snapshot icons here (max 8) -->
-                  </div>
                 </div>
               </div>
 
@@ -372,7 +365,7 @@
 
               <!-- Lista Festività -->
               <div class="time-date-section holidays-card">
-                <h3>Festività Italiane ed Eventi</h3>
+                <h3>Festività ed Eventi  (* in corsivo calcolate annualmente)</h3>
                 <div class="table-container">
                   <table class="holidays-table">
                     <thead>
@@ -386,9 +379,6 @@
                       <!-- Popolato via JS -->
                     </tbody>
                   </table>
-                </div>
-                <div class="holidays-legend">
-                  <p class="hint">* Le feste in corsivo sono calcolate annualmente (es. Pasqua).</p>
                 </div>
               </div>
             </div>
@@ -410,55 +400,72 @@
               <p class="hint">Preferenze dashboard e chiavi API</p>
             </div>
             <div class="settings-content">
-              <div class="settings-group">
-                <h3>API FX (FreeCurrencyAPI)</h3>
-                <p class="hint">
-                  Inserisci la tua chiave personale per api.freecurrencyapi.com.
-                  Verrà salvata nel browser (cookie).
-                </p>
-                <form class="settings-form" id="fx-key-form" autocomplete="off">
-                  <label class="settings-label" for="freecurrency-key">API Key</label>
-                  <div class="settings-row">
-                    <input class="settings-input" id="freecurrency-key" name="freecurrency-key" type="password"
-                      placeholder="Incolla qui la tua API key" spellcheck="false" inputmode="text" />
-                    <button class="settings-btn primary" type="submit">Salva</button>
-                    <button class="settings-btn" type="button" id="clear-freecurrency-key">
-                      Rimuovi
-                    </button>
+              <div class="settings-grid">
+                <div class="settings-group">
+                  <h3>FX API Key</h3>
+                  <form class="settings-form" id="fx-key-form" autocomplete="off">
+                    <label class="settings-label" for="freecurrency-key">FreeCurrencyAPI</label>
+                    <div class="settings-row compact-row">
+                      <input class="settings-input" id="freecurrency-key" name="freecurrency-key" type="password"
+                        placeholder="Incolla la API key" spellcheck="false" inputmode="text" />
+                      <button class="settings-btn icon" type="button" id="toggle-freecurrency-key"
+                        aria-label="Mostra o nascondi chiave FX" title="Mostra/Nascondi">👁</button>
+                      <button class="settings-btn icon" type="button" id="copy-freecurrency-key"
+                        aria-label="Copia chiave FX" title="Copia">⧉</button>
+                      <button class="settings-btn primary" type="submit">Salva</button>
+                      <button class="settings-btn" type="button" id="clear-freecurrency-key">Rimuovi</button>
+                    </div>
+                    <p class="settings-status" id="fx-key-status">Nessuna chiave salvata.</p>
+                  </form>
+                </div>
+
+                <div class="settings-group">
+                  <h3>GitHub Token</h3>
+                  <form class="settings-form" id="gist-key-form" autocomplete="off">
+                    <label class="settings-label" for="gist-token">Personal Access Token</label>
+                    <div class="settings-row compact-row">
+                      <input class="settings-input" id="gist-token" name="gist-token" type="password"
+                        placeholder="Incolla il token GitHub" spellcheck="false" inputmode="text" />
+                      <button class="settings-btn icon" type="button" id="toggle-gist-token"
+                        aria-label="Mostra o nascondi token GitHub" title="Mostra/Nascondi">👁</button>
+                      <button class="settings-btn icon" type="button" id="copy-gist-token"
+                        aria-label="Copia token GitHub" title="Copia">⧉</button>
+                      <button class="settings-btn primary" type="submit">Salva</button>
+                      <button class="settings-btn" type="button" id="clear-gist-token">Rimuovi</button>
+                    </div>
+                    <p class="settings-status" id="gist-key-status">Nessun token salvato.</p>
+                  </form>
+                </div>
+
+                <div class="settings-group settings-group-wide">
+                  <h3>Gist URL</h3>
+                  <div class="settings-form" autocomplete="off">
+                    <label class="settings-label" for="gist-url">Percorso Gist</label>
+                    <div class="settings-row compact-row">
+                      <input class="settings-input" id="gist-url" name="gist-url" type="password"
+                        placeholder="es: https://gist.github.com/username/abc123def456" spellcheck="false" />
+                      <button class="settings-btn icon" type="button" id="toggle-gist-url"
+                        aria-label="Mostra o nascondi URL Gist" title="Mostra/Nascondi">👁</button>
+                      <button class="settings-btn icon" type="button" id="copy-gist-url"
+                        aria-label="Copia URL Gist" title="Copia">⧉</button>
+                      <button class="settings-btn primary" type="button" id="save-gist-url">Salva</button>
+                      <button class="settings-btn" type="button" id="clear-gist-url">Rimuovi</button>
+                    </div>
+                    <p class="settings-status" id="gist-url-status">Nessun URL salvato.</p>
                   </div>
-                  <p class="settings-status" id="fx-key-status">Nessuna chiave salvata.</p>
-                </form>
+                </div>
               </div>
 
-              <div class="settings-group">
-                <h3>GitHub Gist API</h3>
-                <p class="hint">
-                  Inserisci il tuo personal access token per GitHub Gist e l'URL del Gist.
-                  Verranno salvati nel browser (cookie).
-                </p>
-                <form class="settings-form" id="gist-key-form" autocomplete="off">
-                  <label class="settings-label" for="gist-token">GitHub Token</label>
-                  <div class="settings-row">
-                    <input class="settings-input" id="gist-token" name="gist-token" type="password"
-                      placeholder="Incolla qui il tuo GitHub personal access token" spellcheck="false" inputmode="text" />
-                    <button class="settings-btn primary" type="submit">Salva</button>
-                    <button class="settings-btn" type="button" id="clear-gist-token">
-                      Rimuovi
-                    </button>
-                  </div>
-                  <p class="settings-status" id="gist-key-status">Nessun token salvato.</p>
-                  
-                  <label class="settings-label" for="gist-url">URL Gist</label>
-                  <div class="settings-row">
-                    <input class="settings-input" id="gist-url" name="gist-url" type="text"
-                      placeholder="es: https://gist.github.com/username/abc123def456" spellcheck="false" />
-                    <button class="settings-btn primary" type="button" id="save-gist-url">Salva</button>
-                    <button class="settings-btn" type="button" id="clear-gist-url">
-                      Rimuovi
-                    </button>
-                  </div>
-                  <p class="settings-status" id="gist-url-status">Nessun URL salvato.</p>
-                </form>
+              <div class="settings-runtime" id="settings-runtime" aria-live="polite">
+                <div class="settings-runtime-title">Sessione tecnica</div>
+                <div class="settings-runtime-grid" id="settings-runtime-grid">
+                  <div class="runtime-row"><span class="runtime-key">Modalità</span><span class="runtime-value">--</span></div>
+                  <div class="runtime-row"><span class="runtime-key">Neutralino</span><span class="runtime-value">--</span></div>
+                  <div class="runtime-row"><span class="runtime-key">Piattaforma</span><span class="runtime-value">--</span></div>
+                  <div class="runtime-row"><span class="runtime-key">Origin</span><span class="runtime-value">--</span></div>
+                  <div class="runtime-row"><span class="runtime-key">Storage dati</span><span class="runtime-value">--</span></div>
+                  <div class="runtime-row"><span class="runtime-key">Sessione</span><span class="runtime-value">--</span></div>
+                </div>
               </div>
             </div>
           </section>

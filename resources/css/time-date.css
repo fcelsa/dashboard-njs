@@ -79,20 +79,20 @@
 .table-container {
   max-height: 450px;
   overflow-y: auto;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   scrollbar-width: thin;
 }
 
 .holidays-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.80rem;
 }
 
 .holidays-table th, 
 .holidays-table td {
   text-align: left;
-  padding: 0.4rem 0.4rem;
+  padding: 0.2rem 0.2rem;
   border-bottom: 1px solid var(--border);
 }
 

@@ -14,6 +14,106 @@ import './calculator.js';
 import './calc-sheet.js';
 import './time-date-manager.js';
 
+const FOCUS_DEBUG = true;
+
+if (!window.__focusDebugLog) {
+  window.__focusDebugEntries = window.__focusDebugEntries || [];
+  window.__focusDebugEnabled = false;
+  window.__focusDebugVisible = false;
+
+  const ensureFocusDebugPanel = () => {
+    let panel = document.getElementById('focus-debug-panel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'focus-debug-panel';
+      panel.setAttribute('aria-live', 'polite');
+      panel.style.position = 'fixed';
+      panel.style.right = '8px';
+      panel.style.bottom = '8px';
+      panel.style.width = '420px';
+      panel.style.maxWidth = 'calc(100vw - 16px)';
+      panel.style.maxHeight = '32vh';
+      panel.style.overflow = 'auto';
+      panel.style.zIndex = '9999';
+      panel.style.padding = '8px';
+      panel.style.border = '1px solid rgba(255,255,255,0.2)';
+      panel.style.background = 'rgba(0,0,0,0.78)';
+      panel.style.color = '#d7ffd7';
+      panel.style.fontFamily = 'monospace';
+      panel.style.fontSize = '11px';
+      panel.style.lineHeight = '1.35';
+      panel.style.whiteSpace = 'pre-wrap';
+      panel.style.wordBreak = 'break-word';
+      panel.style.display = 'none';
+      document.body.appendChild(panel);
+    }
+    return panel;
+  };
+
+  const refreshFocusDebugPanel = () => {
+    const panel = ensureFocusDebugPanel();
+    panel.style.display = window.__focusDebugVisible ? 'block' : 'none';
+    if (!window.__focusDebugVisible) return;
+    panel.innerHTML = '';
+    const tail = window.__focusDebugEntries.slice(-60);
+    tail.forEach((entry) => {
+      const row = document.createElement('div');
+      row.textContent = `${entry.timestamp} [${entry.source}] ${entry.label} ${JSON.stringify(entry.payload)}`;
+      panel.appendChild(row);
+    });
+    panel.scrollTop = panel.scrollHeight;
+  };
+
+  window.__focusDebugSetVisible = (visible) => {
+    window.__focusDebugVisible = Boolean(visible);
+    window.__focusDebugEnabled = window.__focusDebugVisible;
+    refreshFocusDebugPanel();
+  };
+
+  window.__focusDebugLog = (source, label, payload = {}) => {
+    if (!window.__focusDebugEnabled) return;
+    const timestamp = new Date().toISOString().split('T')[1].slice(0, 12);
+    const entry = { timestamp, source, label, payload };
+    window.__focusDebugEntries.push(entry);
+    if (window.__focusDebugEntries.length > 120) {
+      window.__focusDebugEntries.shift();
+    }
+    if (window.__focusDebugVisible) {
+      refreshFocusDebugPanel();
+    }
+  };
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'F12') return;
+    event.preventDefault();
+    window.__focusDebugSetVisible(!window.__focusDebugVisible);
+    console.debug('[main-focus]', 'debug-panel:toggle', { visible: window.__focusDebugVisible });
+  });
+}
+
+const describeElement = (el) => {
+  if (!el) return 'null';
+  const id = el.id ? `#${el.id}` : '';
+  const className = typeof el.className === 'string' && el.className.trim()
+    ? `.${el.className.trim().split(/\s+/).join('.')}`
+    : '';
+  return `${el.tagName}${id}${className}`;
+};
+
+const logFocusDebug = (label, extra = {}) => {
+  if (!FOCUS_DEBUG || !window.__focusDebugEnabled) return;
+  const calculatorTab = document.querySelector('[data-tab-panel="calculator"]');
+  const payload = {
+    tabActive: Boolean(calculatorTab && calculatorTab.classList.contains('active')),
+    activeElement: describeElement(document.activeElement),
+    ...extra,
+  };
+  console.debug('[main-focus]', label, payload);
+  if (window.__focusDebugLog) {
+    window.__focusDebugLog('main-focus', label, payload);
+  }
+};
+
 if (window.Neutralino?.init) {
   window.Neutralino.init();
 }
@@ -25,8 +125,40 @@ bindThemeSelect(document.getElementById('theme-select'));
 // --- Tabs ---
 const calculatorPanel = document.getElementById('calculator-panel');
 if (calculatorPanel) {
-  initTabs(calculatorPanel);
+  const tabs = initTabs(calculatorPanel);
+  tabs.setActive('calculator');
+  logFocusDebug('tabs:setActive:calculator');
 }
+
+function focusCalculatorAtStartup() {
+  const calculatorTab = document.querySelector('[data-tab-panel="calculator"]');
+  const calculatorWrapper = document.querySelector('.calculator-wrapper');
+  if (!calculatorTab || !calculatorWrapper) return;
+  if (!calculatorTab.classList.contains('active')) {
+    logFocusDebug('focusCalculatorAtStartup:skip-tab');
+    return;
+  }
+  logFocusDebug('focusCalculatorAtStartup:before');
+  try {
+    calculatorWrapper.focus({ preventScroll: true });
+  } catch {
+    calculatorWrapper.focus();
+  }
+  logFocusDebug('focusCalculatorAtStartup:after');
+}
+
+window.addEventListener('load', () => {
+  logFocusDebug('window:load');
+  focusCalculatorAtStartup();
+  setTimeout(focusCalculatorAtStartup, 120);
+  setTimeout(focusCalculatorAtStartup, 260);
+});
+
+window.addEventListener('focus', () => {
+  logFocusDebug('window:focus');
+}, { once: true });
+
+window.addEventListener('focus', focusCalculatorAtStartup, { once: true });
 
 // --- Dashboard (calendar, clock, FX) ---
 renderMoonPhase();

@@ -8,6 +8,12 @@
     height: 100%;
     align-items: start;
     font-family: "Inter", sans-serif;
+    outline: none;
+}
+
+.calculator-wrapper:focus,
+.calculator-wrapper:focus-visible {
+    outline: none;
 }
 
 /* --- Lato Destro: Paper --- */
@@ -47,8 +53,8 @@
     border: 1px solid #222;
 }
 
-/* Accensione LED su Hover o Focus */
-.calculator-wrapper:hover .focus-led,
+/* Accensione LED su Focus */
+.calculator-wrapper.is-pointer-over .focus-led,
 .calculator-wrapper:focus-within .focus-led,
 .calculator-wrapper.is-keyboard-focus .focus-led {
     background-color: var(--led-on, #ff3300);
@@ -191,18 +197,27 @@
 .calc-switches {
     display: flex;
     justify-content: space-between; /* Distribuisce uniformemente nella larghezza */
-    align-items: flex-start; /* Allinea in alto per allineare etichette e slider */
+    align-items: center;
     gap: 10px;
     margin-bottom: 10px; /* Ridotto per avvicinare alla tastiera */
     padding: 0 5px; /* Margini laterali minimi */
 }
 
 .switch-wrapper {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto auto;
+    column-gap: 8px;
+    row-gap: 2px;
     align-items: center;
-    gap: 4px;
     position: relative;
+}
+
+.switch-wrapper.multi-switch {
+    grid-template-columns: auto 1fr;
+}
+
+.switch-wrapper:not(.multi-switch) {
+    grid-template-columns: auto auto;
 }
 
 .switch-label {
@@ -211,7 +226,45 @@
     color: var(--switch-label, #888);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 2px;
+    margin-bottom: 16px;
+    min-width: 28px;
+    text-align: right;
+}
+
+.switch-wrapper.multi-switch .switch-label {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+}
+
+.switch-wrapper.multi-switch .switch-slider {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.switch-wrapper:not(.multi-switch) .switch-label {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+}
+
+.switch-wrapper:not(.multi-switch) .switch {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+}
+
+.switch-wrapper:not(.multi-switch)::after {
+    content: "ON";
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    margin-top: 1px;
+    font-size: 0.65rem;
+    font-family: sans-serif;
+    color: var(--switch-ticks, #bbb);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1;
 }
 
 /* Switch Multi-Posizione (Slider) */
@@ -226,6 +279,11 @@
     width: 100%;
     padding: 0 2px;
     margin-top: 2px; /* Piccola distanza dallo slider */
+}
+
+.switch-wrapper.multi-switch .switch-ticks {
+    grid-column: 2;
+    grid-row: 2;
 }
 .switch-ticks span {
     font-size: 0.65rem;
@@ -288,7 +346,7 @@ input[type=range].switch-slider::-webkit-slider-thumb {
     position: absolute;
     cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-color: var(--switch-track, #222);
+    background-color: var(--key-minus-color, #b74040);
     transition: .2s;
     border-radius: 2px;
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
@@ -308,7 +366,7 @@ input[type=range].switch-slider::-webkit-slider-thumb {
 }
 
 input:checked + .slider {
-    background-color: #222; 
+    background-color: var(--accent-2, #9bb3a8);
 }
 
 input:checked + .slider:before {
@@ -321,8 +379,8 @@ input:checked + .slider:before {
 .calc-keyboard-container {
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    padding: 15px;
+    gap: 16px;
+    padding: 16px;
     background: var(--calc-panel, #333333);
     border-radius: 8px;
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
@@ -331,40 +389,57 @@ input:checked + .slider:before {
 .calc-func-keys {
     display: flex;
     justify-content: flex-start;
-    gap: 6px;
-    width: 462px;
+    gap: 12px;
+    width: 552px;
+    --func-key-height: 28px;
+    --func-key-font-size: 0.8rem;
+    --func-key-base-bg: var(--key-bg-gray, #4a4a4a);
+    --func-key-top-bg: var(--key-bg-gray-thumb, #b0b0b0);
+    --func-key-top-color: var(--key-text-dark, #111);
     margin: 0 auto; /* Centrato nel container */
+}
+
+.calc-func-keys .key-rect {
+    height: var(--func-key-height);
+    font-size: var(--func-key-font-size);
+    background-color: var(--func-key-base-bg);
+}
+
+.calc-func-keys .key-rect::after {
+    height: calc(var(--func-key-height) - 9px);
+    background-color: var(--func-key-top-bg);
+    color: var(--func-key-top-color);
 }
 
 .calc-main-keys {
     display: flex;
-    gap: 10px;
+    gap: 24px;
     justify-content: center;
 }
 
 /* BLOCCHI TASTI */
 .key-block {
     display: grid;
-    gap: 5px;
+    gap: 8px;
 }
 
 /* Blocco 2: Centrale (Numerico - 4 colonne x 4 righe) */
 .block-center {
-    grid-template-columns: repeat(4, 46px);
-    grid-template-rows: repeat(4, 46px);
+    grid-template-columns: repeat(4, 52px);
+    grid-template-rows: repeat(4, 52px);
 }
 
 /* Blocco 3: Destra (Totali) */
 .block-right {
-    grid-template-columns: repeat(4, 46px);
-    grid-template-rows: repeat(4, 46px);
+    grid-template-columns: repeat(5, 52px);
+    grid-template-rows: repeat(4, 52px);
 }
 
 /* --- STILI TASTI --- */
 .key-btn {
     border: none;
     font-family: "Inter", sans-serif;
-    font-size: 1rem;
+    font-size: 1.08rem;
     font-weight: 700;
     cursor: pointer;
     position: relative;
@@ -400,16 +475,16 @@ input:checked + .slider:before {
 
 /* --- TASTI RETTANGOLARI cost sell margin tax+ tax- rate --- */
 .key-rect {
-    width: 72px;
-    height: 30px;
+    width: 84px;
+    height: 36px;
     border-radius: 4px;
     background: var(--key-bg-default, #2b3036);
     color: var(--key-text-light, #eee);
-    font-size: 0.68rem;
+    font-size: 0.74rem;
 }
 .key-rect::after {
-    width: 66px; /* Adattato al nuovo width */
-    height: 22px; /* Adattato al nuovo height */
+    width: 76px; /* Adattato al nuovo width */
+    height: 27px; /* Adattato al nuovo height */
     border-radius: 3px;
     /* Il colore viene definito da key-gray */
 }
@@ -422,11 +497,11 @@ input:checked + .slider:before {
 }
 
 .key-round::after {
-    width: 34px; height: 34px;
+    width: 40px; height: 40px;
     background: var(--key-bg-numeric, #383e45);
     border-radius: 50%;
     color: var(--key-text-light, #e6e4d5);
-    font-size: 1.1rem;
+    font-size: 1.2rem;
 }
 
 /* Tasto 0 Doppio: Base larga, tasto fisico largo "pillola" */
@@ -435,8 +510,8 @@ input:checked + .slider:before {
     background-color: var(--key-bg-default, #e6e4d5);
 }
 .key-round.key-double-h::after {
-    width: 80px;               /* Più largo */
-    border-radius: 18px;       /* Pillola */
+    width: 92px;               /* Più largo */
+    border-radius: 20px;       /* Pillola */
 }
 
 
@@ -449,9 +524,9 @@ input:checked + .slider:before {
 }
 
 .key-square::after {
-    width: 34px; height: 34px; /* Dimensioni tasto fisico quadrato */
+    width: 40px; height: 40px; /* Dimensioni tasto fisico quadrato */
     border-radius: 5px;        /* Angoli leggermente smussati */
-    font-size: 1.1rem;
+    font-size: 1.2rem;
 }
 
 /* Doppio Verticale */
@@ -460,7 +535,7 @@ input:checked + .slider:before {
     height: 100%;
 }
 .key-square.key-double-v::after {
-    height: 86px; /* Altezza doppia ridotta */
+    height: 98px; /* Altezza doppia */
 }
 /* Doppio Orizzontale */
 .key-square.key-double-h {
@@ -468,7 +543,26 @@ input:checked + .slider:before {
     width: 100%;
 }
 .key-square.key-double-h::after {
-    width: 86px;
+    width: 98px;
+}
+
+.calc-key-spacer {
+    display: block;
+    width: 52px;
+    height: 52px;
+    pointer-events: none;
+}
+
+button[data-key="S_SAVE"]::after {
+    content: "SALVA";
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+}
+
+button[data-key="S_LOAD"]::after {
+    content: "RICH";
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
 }
 
 
@@ -485,7 +579,7 @@ input:checked + .slider:before {
 
 /* Blocco DX: Verde Scuro (Tasto T, S, ecc) */
 .key-green {
-    background-color: var(--key-bg-green, #5d7a72);
+    background-color: var(--key-bg-green, #67a392);
 }
 .key-green::after {
     background-color: var(--key-bg-numeric, #383e45);
@@ -513,18 +607,12 @@ input:checked + .slider:before {
 /* Tasto Meno: Rosso e Grande */
 button[data-key="-"]::after {
     color: var(--key-minus-color, #b74040);
-    font-size: 1.5rem;
+    font-size: 2.2rem;
 }
 
 /* Tasto Più: Grande */
 button[data-key="+"]::after {
-    font-size: 1.5rem;
-}
-
-/* Tasto CNT: Font piccolo */
-button[data-key="CNT"]::after {
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 1.8rem;
 }
 
 /* Tasti Funzione Rettangolari (Grigi) */
@@ -719,128 +807,7 @@ button[data-key="CNT"]::after {
     display: none;
 }
 /* --- History Snapshots --- */
-.calc-history-container {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    width: 100%;
-    gap: 12px;
-    padding: 8px 12px;
-    background: var(--panel-soft);
-    border: 1px solid var(--calc-border);
-    border-radius: 8px;
-    margin-top: 10px;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
-}
-
-.calc-history-controls {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.calc-save-btn,
-.calc-load-btn {
-    padding: 4px 10px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: 1px solid var(--calc-border);
-    border-radius: 4px;
-    background: var(--key-bg-gray);
-    color: var(--key-text-light);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 64px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.calc-save-btn:hover,
-.calc-load-btn:hover {
-    background: var(--accent);
-    color: var(--bg);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.calc-save-btn:active,
-.calc-load-btn:active {
-    transform: translateY(1px);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.calc-history-icons {
-    display: flex;
-    gap: 6px;
-    flex-grow: 1;
-    justify-content: flex-end;
-    align-items: center;
-}
-
-.calc-history-icon {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 700;
-    font-family: var(--font-mono, monospace);
-    background: var(--key-bg-numeric);
-    color: var(--key-text-light);
-    border: 1px solid var(--calc-border);
-    border-radius: 4px;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-}
-
-.calc-history-icon:hover {
-    background: var(--accent-2);
-    color: var(--bg);
-    border-color: var(--accent-2);
-    transform: scale(1.15) translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    z-index: 10;
-}
-
-.calc-history-icon:active {
-    transform: scale(0.95);
-}
-
-/* Stile Tooltip (creato dinamicamente da JS) */
-.calc-history-tooltip {
-    position: fixed;
-    background: var(--panel-soft);
-    color: var(--text);
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-width: 220px;
-    z-index: 10000;
-    pointer-events: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    border: 1px solid var(--accent);
-    text-align: left;
-    font-family: var(--font-mono, monospace);
-    animation: tooltipFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes tooltipFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* --- History Snapshots removed (explicit Save/Load now in keypad) --- */
 
 /* --- Save/Load Dialogs --- */
 .calc-dialog-overlay {
