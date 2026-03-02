@@ -29,6 +29,7 @@
   --flip-text: #dfe7f0;
   --day-today-bg: rgba(122, 166, 194, 0.2);
   --day-today-text: #eaf2f7;
+  --calendar-today-border: 1px dashed rgba(122, 166, 194, 0.65);
   
   /* Calculator-specific */
   --calc-bg: #556887;
@@ -161,6 +162,7 @@
   --flip-text: #1a1e24;
   --day-today-bg: rgba(58, 125, 184, 0.15);
   --day-today-text: #1a3050;
+  --calendar-today-border: 1px dashed rgba(58, 125, 184, 0.55);
   
   /* Calculator-specific */
   --calc-bg: #d0dde8;
@@ -293,6 +295,7 @@
   --flip-text: #e0e0e0;
   --day-today-bg: rgba(79, 195, 247, 0.2);
   --day-today-text: #b3e5fc;
+  --calendar-today-border: 1px dashed rgba(79, 195, 247, 0.8);
   
   /* Calculator-specific */
   --calc-bg: #000;
@@ -426,6 +429,7 @@
   --flip-text: #222;
   --day-today-bg: rgba(0, 102, 204, 0.12);
   --day-today-text: #004488;
+  --calendar-today-border: 1px solid rgba(0, 102, 204, 0.7);
   
   /* Calculator-specific: Minimal pixelated style */
   --calc-bg: #c0c0c0;
@@ -561,6 +565,7 @@
   --flip-text: #000000;
   --day-today-bg: transparent;
   --day-today-text: #000000;
+  --calendar-today-border: 2px solid #000000;
   
   /* Overrides for Mac1984 specific highlights */
   --calendar-today-outline: 3px solid #000;
@@ -700,6 +705,7 @@
   --flip-text: #FFFFFF;
   --day-today-bg: #FF8800;
   --day-today-text: #FFFFFF;
+  --calendar-today-border: 1px solid #FFFFFF;
   
   /* Calculator-specific */
   --calc-bg: #0055AA;
@@ -1086,6 +1092,7 @@
   --flip-text: #ffffff;
   --day-today-bg: rgba(255, 170, 0, 0.15);
   --day-today-text: #ffdd88;
+  --calendar-today-border: 1px solid rgba(255, 170, 0, 0.8);
   
   /* Calculator-specific: NeXTSTEP aesthetic */
   --calc-bg: #4a4a4a;
@@ -1862,8 +1869,9 @@ body {
 .weekdays,
 .days {
   display: grid;
-  grid-template-columns: 28px repeat(7, 1fr);
-  gap: 0;
+  grid-template-columns: 34px repeat(1, minmax(0, 1fr)) repeat(4, minmax(0, 0.60fr)) repeat(1, minmax(0, 0.80fr)) repeat(1, minmax(0, 0.56fr));
+  column-gap: 0;
+  row-gap: 0;
   font-size: 0.86rem;
   text-align: right;
   line-height: 1.0;
@@ -1916,7 +1924,7 @@ body {
   background: var(--day-today-bg);
   color: var(--day-today-text);
   font-weight: 600;
-  border: thin dashed red ;
+  border: var(--calendar-today-border, 1px dashed currentColor);
 }
 
 .moon-now {

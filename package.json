@@ -9,7 +9,7 @@
     "dev": "npm run version:sync && node ./scripts/run-dev-safe.mjs",
     "dev:raw": "npx @neutralinojs/neu run",
     "build": "npm run version:sync && node ./scripts/build-all.mjs",
-    "build:mac": "npm run version:sync && ./scripts/build-macos-app.sh"
+    "build:mac": "npm run version:sync && node ./scripts/build-macos-wrapper.mjs"
   },
   "devDependencies": {
     "@neutralinojs/neu": "^11.7.0"

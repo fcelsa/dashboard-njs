@@ -22,7 +22,7 @@ create_macos_bundle() {
   local resources_dir="$contents_dir/Resources"
   local executable_name="dashboard-njs"
   local icon_source_png="$ROOT_DIR/assets/icon/app-icon.png"
-  local icon_filename="AppIcon.icns"
+  local icon_filename="AppIcon"
 
   mv "$app_path" "$tmp_bin"
   mkdir -p "$macos_dir" "$resources_dir"
@@ -46,7 +46,13 @@ create_macos_bundle() {
     sips -z 512 512   "$icon_source_png" --out "$iconset_dir/icon_512x512.png" >/dev/null
     sips -z 1024 1024 "$icon_source_png" --out "$iconset_dir/icon_512x512@2x.png" >/dev/null
 
-    iconutil -c icns "$iconset_dir" -o "$resources_dir/$icon_filename" >/dev/null 2>&1 || true
+    if command -v iconutil >/dev/null 2>&1; then
+      iconutil -c icns "$iconset_dir" -o "$resources_dir/${icon_filename}.icns" >/dev/null 2>&1 || true
+    fi
+
+    if [[ ! -f "$resources_dir/${icon_filename}.icns" ]]; then
+      echo "Warning: non è stato possibile creare ${icon_filename}.icns in $resources_dir"
+    fi
 
     rm -rf "$tmp_dir"
   fi
@@ -82,7 +88,7 @@ create_macos_bundle() {
 </plist>
 PLIST
 
-  if [[ -f "$resources_dir/$icon_filename" ]] && command -v /usr/libexec/PlistBuddy >/dev/null 2>&1; then
+  if [[ -f "$resources_dir/${icon_filename}.icns" ]] && command -v /usr/libexec/PlistBuddy >/dev/null 2>&1; then
     /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "$contents_dir/Info.plist" >/dev/null 2>&1 || true
     /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string $icon_filename" "$contents_dir/Info.plist" >/dev/null 2>&1 || true
   fi
