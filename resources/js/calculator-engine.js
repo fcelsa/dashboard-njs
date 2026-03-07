@@ -1,14 +1,3 @@
-import {
-    computeSell,
-    computeCost,
-    computeMargin,
-    computeMarkup,
-    computeSellFromMarkup,
-    computeCostFromMarkup,
-    addTax,
-    removeTax
-} from './engine/business-math.js';
-
 import { applyRounding } from './utils/number-utils.js';
 
 const NON_EDITABLE_KEYS = new Set([
@@ -742,7 +731,8 @@ class CalculatorEngine {
             symbol: '',
             key: '=',
             type: 'result',
-            roundingFlag: roundedResult.roundingFlag
+            roundingFlag: roundedResult.roundingFlag,
+            roundingRawValue: roundedResult.rawValue
         });
 
         this.accumulator += result;
@@ -755,7 +745,8 @@ class CalculatorEngine {
             symbol: 'S',
             key: 'S',
             type: 'result',
-            roundingFlag: accumRounded.roundingFlag
+            roundingFlag: accumRounded.roundingFlag,
+            roundingRawValue: accumRounded.rawValue
         });
 
         if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(result));
@@ -1041,6 +1032,7 @@ class CalculatorEngine {
         this.addSubOperand = null;
         this.addSubResults = [];
         let val;
+        const isResumedOperand = explicitVal === null && this.isNewSequence;
         if (explicitVal !== null) {
             val = explicitVal;
         } else {
@@ -1094,7 +1086,14 @@ class CalculatorEngine {
         }
 
         this.pendingMultDivOp = op;
-        this._addHistoryEntry({ val, symbol: op, key: op, type: 'input' });
+        this._addHistoryEntry({
+            val,
+            symbol: op,
+            key: op,
+            type: 'input',
+            isResumedOperand,
+            sourceContext: 'multDiv'
+        });
         
         this.currentInput = "0";
         this.isNewSequence = true;
@@ -1133,7 +1132,8 @@ class CalculatorEngine {
                 symbol: '',
                 key: '=',
                 type: 'result',
-                roundingFlag: resRounded.roundingFlag
+                roundingFlag: resRounded.roundingFlag,
+                roundingRawValue: resRounded.rawValue
             });
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
@@ -1182,7 +1182,8 @@ class CalculatorEngine {
                 symbol: '*',
                 key: '%',
                 type: 'result',
-                roundingFlag: resRounded.roundingFlag
+                roundingFlag: resRounded.roundingFlag,
+                roundingRawValue: resRounded.rawValue
             });
 
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
@@ -1246,14 +1247,16 @@ class CalculatorEngine {
             symbol: '%',
             key: 'Δ%',
             type: 'result',
-            roundingFlag: percentRounded.roundingFlag
+            roundingFlag: percentRounded.roundingFlag,
+            roundingRawValue: percentRounded.rawValue
         });
         this._addHistoryEntry({
             val: this._formatResult(diffRounded.value),
             symbol: 'T',
             key: 'ΔT',
             type: 'result',
-            roundingFlag: diffRounded.roundingFlag
+            roundingFlag: diffRounded.roundingFlag,
+            roundingRawValue: diffRounded.rawValue
         });
 
         this._accumulateGT(diffRounded.value);
@@ -1288,7 +1291,8 @@ class CalculatorEngine {
             symbol: '',
             key: '=',
             type: 'result',
-            roundingFlag: resRounded.roundingFlag
+            roundingFlag: resRounded.roundingFlag,
+            roundingRawValue: resRounded.rawValue
         });
         if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
@@ -1333,7 +1337,8 @@ class CalculatorEngine {
             symbol: '',
             key: '=',
             type: 'result',
-            roundingFlag: resRounded.roundingFlag
+            roundingFlag: resRounded.roundingFlag,
+            roundingRawValue: resRounded.rawValue
         });
         if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
@@ -1391,7 +1396,8 @@ class CalculatorEngine {
                 symbol: '',
                 key: '=',
                 type: 'result',
-                roundingFlag: resRounded.roundingFlag
+                roundingFlag: resRounded.roundingFlag,
+                roundingRawValue: resRounded.rawValue
             });
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
@@ -1406,7 +1412,8 @@ class CalculatorEngine {
                 symbol: 'S',
                 key: 'S',
                 type: 'result',
-                roundingFlag: accumRounded.roundingFlag
+                roundingFlag: accumRounded.roundingFlag,
+                roundingRawValue: accumRounded.rawValue
             });
 
             this.lastAddSubValue = val;
@@ -1423,9 +1430,17 @@ class CalculatorEngine {
 
         if (this.pendingMultDivOp) {
             let val = explicitVal !== null ? explicitVal : parseFloat(this.currentInput);
+            const isResumedOperand = explicitVal === null && this.isNewSequence;
             
             // Print second operand
-            this._addHistoryEntry({ val, symbol: '=', key: '=', type: 'input' });
+            this._addHistoryEntry({
+                val,
+                symbol: '=',
+                key: '=',
+                type: 'input',
+                isResumedOperand,
+                sourceContext: 'multDivEqual'
+            });
 
             let res = 0;
             
@@ -1452,7 +1467,8 @@ class CalculatorEngine {
                 symbol: '',
                 key: '=',
                 type: 'result',
-                roundingFlag: resRounded.roundingFlag
+                roundingFlag: resRounded.roundingFlag,
+                roundingRawValue: resRounded.rawValue
             });
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
@@ -1467,7 +1483,8 @@ class CalculatorEngine {
                 symbol: 'S',
                 key: 'S',
                 type: 'result',
-                roundingFlag: accumRounded.roundingFlag
+                roundingFlag: accumRounded.roundingFlag,
+                roundingRawValue: accumRounded.rawValue
             });
 
             this.lastMultDivResult = res;
@@ -1495,7 +1512,8 @@ class CalculatorEngine {
                     symbol: 'T',
                     key: 'T',
                     type: 'result',
-                    roundingFlag: total.roundingFlag
+                    roundingFlag: total.roundingFlag,
+                    roundingRawValue: total.rawValue
                 });
                 if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(total.value));
                 this._emitStatus();
@@ -1518,7 +1536,8 @@ class CalculatorEngine {
                 symbol: 'T',
                 key: 'T',
                 type: 'result',
-                roundingFlag: total.roundingFlag
+                roundingFlag: total.roundingFlag,
+                roundingRawValue: total.rawValue
             });
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(total.value));
             this._emitStatus();
@@ -1570,7 +1589,8 @@ class CalculatorEngine {
                 val: this._formatResult(res),
                 symbol: '',
                 key: '=',
-                roundingFlag: resRounded.roundingFlag
+                roundingFlag: resRounded.roundingFlag,
+                roundingRawValue: resRounded.rawValue
             }); 
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
@@ -1634,7 +1654,8 @@ class CalculatorEngine {
                 symbol: 'GT*',
                 key: 'GT',
                 type: 'input',
-                roundingFlag: gtRounded.roundingFlag
+                roundingFlag: gtRounded.roundingFlag,
+                roundingRawValue: gtRounded.rawValue
             }); 
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(val));
             
@@ -1668,7 +1689,8 @@ class CalculatorEngine {
             symbol: sym,
             key: 'T' + accIndex,
             type: 'input',
-            roundingFlag: totalRounded.roundingFlag
+            roundingFlag: totalRounded.roundingFlag,
+            roundingRawValue: totalRounded.rawValue
         });
         if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(val));
         
@@ -1711,7 +1733,8 @@ class CalculatorEngine {
                  symbol: 'GT',
                  key: 'GT',
                  type: 'input',
-                 roundingFlag: gtRounded.roundingFlag
+                 roundingFlag: gtRounded.roundingFlag,
+                 roundingRawValue: gtRounded.rawValue
              });
              if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(val));
              
@@ -1733,7 +1756,8 @@ class CalculatorEngine {
             symbol: sym,
             key: 'S' + accIndex,
             type: 'input',
-            roundingFlag: subtotalRounded.roundingFlag
+            roundingFlag: subtotalRounded.roundingFlag,
+            roundingRawValue: subtotalRounded.rawValue
         });
         if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(val));
         
@@ -1938,18 +1962,43 @@ class CalculatorEngine {
             if (key === 'MARGIN') {
                 // If cost and sell are present, compute margin
                 if (this.isNewSequence && this.currentInput === "0" && this.costValue !== null && this.sellValue !== null) {
-                    res = computeMargin(this.costValue, this.sellValue);
-                    res = this._applyRounding(res);
+                    // Print under-the-hood steps:
+                    // sell -
+                    // cost =
+                    // profit ÷
+                    // sell =
+                    // margin%
+                    // @2026-03-07
+                    const profitRounded = this._applyRoundingWithFlag(this.sellValue - this.costValue);
+                    const profit = profitRounded.value;
+
+                    this._addHistoryEntry({ val: this.sellValue, symbol: '-', key: 'MARGIN', type: 'input' });
+                    this._addHistoryEntry({ val: this.costValue, symbol: '=', key: 'MARGIN', type: 'input' });
+                    this._addHistoryEntry({
+                        val: this._formatResult(profit),
+                        symbol: '÷',
+                        key: 'MARGIN',
+                        type: 'result',
+                        roundingFlag: profitRounded.roundingFlag,
+                        roundingRawValue: profitRounded.rawValue
+                    });
+
+                    this._addHistoryEntry({ val: this.sellValue, symbol: '=', key: 'MARGIN', type: 'input' });
+
+                    const marginRounded = this._applyRoundingWithFlag((profit / this.sellValue) * 100);
+                    res = marginRounded.value;
                     this.marginPercent = res;
                     this.pricingMode = 'margin';
                     this._addHistoryEntry({
-                        val: res,
-                        symbol: 'MARGIN',
+                        val: this._formatResult(res),
+                        symbol: '',
                         key: 'MARGIN',
                         type: 'result',
                         percentSuffix: true,
-                        leadSymbol: '='
+                        roundingFlag: marginRounded.roundingFlag,
+                        roundingRawValue: marginRounded.rawValue
                     });
+
                     this.onDisplayUpdate(String(res));
                     this.currentInput = String(res);
                     this.isNewSequence = true;
@@ -1969,18 +2018,43 @@ class CalculatorEngine {
             if (key === 'MARKUP') {
                 // If cost and sell are present, compute markup
                 if (this.isNewSequence && this.currentInput === "0" && this.costValue !== null && this.sellValue !== null) {
-                    res = computeMarkup(this.costValue, this.sellValue);
-                    res = this._applyRounding(res);
+                    // Print under-the-hood steps:
+                    // sell -
+                    // cost =
+                    // profit ÷
+                    // cost =
+                    // markup%
+                    // @2026-03-07
+                    const profitRounded = this._applyRoundingWithFlag(this.sellValue - this.costValue);
+                    const profit = profitRounded.value;
+
+                    this._addHistoryEntry({ val: this.sellValue, symbol: '-', key: 'MARKUP', type: 'input' });
+                    this._addHistoryEntry({ val: this.costValue, symbol: '=', key: 'MARKUP', type: 'input' });
+                    this._addHistoryEntry({
+                        val: this._formatResult(profit),
+                        symbol: '÷',
+                        key: 'MARKUP',
+                        type: 'result',
+                        roundingFlag: profitRounded.roundingFlag,
+                        roundingRawValue: profitRounded.rawValue
+                    });
+
+                    this._addHistoryEntry({ val: this.costValue, symbol: '=', key: 'MARKUP', type: 'input' });
+
+                    const markupRounded = this._applyRoundingWithFlag((profit / this.costValue) * 100);
+                    res = markupRounded.value;
                     this.markupPercent = res;
                     this.pricingMode = 'markup';
                     this._addHistoryEntry({
-                        val: res,
-                        symbol: 'MARKUP',
+                        val: this._formatResult(res),
+                        symbol: '',
                         key: 'MARKUP',
                         type: 'result',
                         percentSuffix: true,
-                        leadSymbol: '='
+                        roundingFlag: markupRounded.roundingFlag,
+                        roundingRawValue: markupRounded.rawValue
                     });
+
                     this.onDisplayUpdate(String(res));
                     this.currentInput = String(res);
                     this.isNewSequence = true;
@@ -1998,15 +2072,154 @@ class CalculatorEngine {
             }
 
             // Calculations
-            if (key === 'TAX+') res = addTax(val, this.taxRate);
-            else if (key === 'TAX-') res = removeTax(val, this.taxRate);
+            // TAX+/TAX-: if input is zero, do nothing
+            // @2026-03-07
+            if ((key === 'TAX+' || key === 'TAX-') && val === 0) {
+                return;
+            }
+
+            if (key === 'TAX+') {
+                // TAX+ behaves like A + A*(taxRate/100), print as percentage operation
+                // @2026-03-07
+                const taxAmount = this._applyRounding(val * (this.taxRate / 100));
+                res = this._applyRounding(val + taxAmount);
+                
+                // Entry 0: Base operand with + operator
+                this._addHistoryEntry({
+                    val: val,
+                    symbol: '+',
+                    key: 'TAX+',
+                    type: 'input'
+                });
+                
+                // Entry 1: Tax rate input with calculated value
+                this._addHistoryEntry({
+                    val: this.taxRate,
+                    symbol: '%',
+                    key: 'TAX+',
+                    type: 'input',
+                    percentValue: taxAmount,
+                    percentBase: val,
+                    percentOp: '+'
+                });
+                
+                // Entry 2: Result with total
+                const resRounded = this._applyRoundingWithFlag(res);
+                res = resRounded.value;
+                this._addHistoryEntry({
+                    val: this._formatResult(res),
+                    symbol: '*',
+                    key: 'TAX+',
+                    type: 'result',
+                    roundingFlag: resRounded.roundingFlag,
+                    roundingRawValue: resRounded.rawValue
+                });
+                
+                this.onDisplayUpdate(String(res));
+                this.currentInput = String(res);
+                this.isNewSequence = true;
+                return;
+            }
+            else if (key === 'TAX-') {
+                // TAX- scorporates tax: A / (1 + taxRate/100)
+                // Example: 122 with 22% tax -> 122 / 1.22 = 100
+                // @2026-03-07
+                const divisor = 1 + (this.taxRate / 100);
+                res = this._applyRounding(val / divisor);
+                const taxAmount = this._applyRounding(val - res);
+                
+                // Entry 0: Base operand with ÷ operator
+                this._addHistoryEntry({
+                    val: val,
+                    symbol: '÷',
+                    key: 'TAX-',
+                    type: 'input'
+                });
+                
+                // Entry 1: Tax rate input with calculated value
+                this._addHistoryEntry({
+                    val: this.taxRate,
+                    symbol: '%',
+                    key: 'TAX-',
+                    type: 'input',
+                    percentValue: -taxAmount,
+                    percentBase: val,
+                    percentOp: '-'
+                });
+                
+                // Entry 2: Result with total
+                const resRounded = this._applyRoundingWithFlag(res);
+                res = resRounded.value;
+                this._addHistoryEntry({
+                    val: this._formatResult(res),
+                    symbol: '*',
+                    key: 'TAX-',
+                    type: 'result',
+                    roundingFlag: resRounded.roundingFlag,
+                    roundingRawValue: resRounded.rawValue
+                });
+                
+                this.onDisplayUpdate(String(res));
+                this.currentInput = String(res);
+                this.isNewSequence = true;
+                return;
+            }
             else if (key === 'COST') {
                 if (this.isNewSequence && this.currentInput === "0" && this.sellValue !== null) {
+                    // Calculate COST from SELL and MARGIN/MARKUP
+                    // Print under-the-hood steps
+                    // @2026-03-07
                     if (this.pricingMode === 'markup') {
-                        res = computeCostFromMarkup(this.sellValue, this.markupPercent);
+                        // COST = SELL / (1 + MARKUP/100)
+                        // Similar to TAX- scorporation
+                        const divisor = 1 + (this.markupPercent / 100);
+                        res = this._applyRounding(this.sellValue / divisor);
+                        const markupAmount = this._applyRounding(this.sellValue - res);
+                        
+                        this._addHistoryEntry({ val: this.sellValue, symbol: '÷', key: 'COST', type: 'input' });
+                        this._addHistoryEntry({
+                            val: this.markupPercent,
+                            symbol: '%',
+                            key: 'COST',
+                            type: 'input',
+                            percentValue: -markupAmount,
+                            percentBase: this.sellValue,
+                            percentOp: '-'
+                        });
                     } else {
-                        res = computeCost(this.sellValue, this.marginPercent);
+                        // COST = SELL * (1 - MARGIN/100)
+                        const multiplier = 1 - (this.marginPercent / 100);
+                        res = this._applyRounding(this.sellValue * multiplier);
+                        const marginAmount = this._applyRounding(this.sellValue - res);
+                        
+                        this._addHistoryEntry({ val: this.sellValue, symbol: 'x', key: 'COST', type: 'input' });
+                        this._addHistoryEntry({
+                            val: this.marginPercent,
+                            symbol: '%',
+                            key: 'COST',
+                            type: 'input',
+                            percentValue: -marginAmount,
+                            percentBase: this.sellValue,
+                            percentOp: '-'
+                        });
                     }
+                    
+                    const resRounded = this._applyRoundingWithFlag(res);
+                    res = resRounded.value;
+                    this._addHistoryEntry({
+                        val: this._formatResult(res),
+                        symbol: '',
+                        key: 'COST',
+                        type: 'result',
+                        roundingFlag: resRounded.roundingFlag,
+                        roundingRawValue: resRounded.rawValue
+                    });
+                    
+                    this.costValue = res;
+                    this.onDisplayUpdate(String(res));
+                    this.currentInput = String(res);
+                    this.isNewSequence = true;
+                    return;
                 } else {
                     this.costValue = val;
                     this._addHistoryEntry({ val, symbol: 'COST', key: 'COST', type: 'input' });
@@ -2018,11 +2231,63 @@ class CalculatorEngine {
             }
             else if (key === 'SELL') {
                 if (this.isNewSequence && this.currentInput === "0" && this.costValue !== null) {
+                    // Calculate SELL from COST and MARGIN/MARKUP
+                    // Print under-the-hood steps
+                    // @2026-03-07
                     if (this.pricingMode === 'markup') {
-                        res = computeSellFromMarkup(this.costValue, this.markupPercent);
+                        // SELL = COST * (1 + MARKUP/100)
+                        // Similar to TAX+ addition
+                        const markupAmount = this._applyRounding(this.costValue * (this.markupPercent / 100));
+                        res = this._applyRounding(this.costValue + markupAmount);
+                        
+                        this._addHistoryEntry({ val: this.costValue, symbol: '+', key: 'SELL', type: 'input' });
+                        this._addHistoryEntry({
+                            val: this.markupPercent,
+                            symbol: '%',
+                            key: 'SELL',
+                            type: 'input',
+                            percentValue: markupAmount,
+                            percentBase: this.costValue,
+                            percentOp: '+'
+                        });
                     } else {
-                        res = computeSell(this.costValue, this.marginPercent);
+                        // SELL = COST / (1 - MARGIN/100)
+                        const divisor = 1 - (this.marginPercent / 100);
+                        if (divisor === 0) {
+                            this._triggerError("Error");
+                            return;
+                        }
+                        res = this._applyRounding(this.costValue / divisor);
+                        const marginAmount = this._applyRounding(res - this.costValue);
+                        
+                        this._addHistoryEntry({ val: this.costValue, symbol: '÷', key: 'SELL', type: 'input' });
+                        this._addHistoryEntry({
+                            val: this.marginPercent,
+                            symbol: '%',
+                            key: 'SELL',
+                            type: 'input',
+                            percentValue: marginAmount,
+                            percentBase: res,
+                            percentOp: '+'
+                        });
                     }
+                    
+                    const resRounded = this._applyRoundingWithFlag(res);
+                    res = resRounded.value;
+                    this._addHistoryEntry({
+                        val: this._formatResult(res),
+                        symbol: '',
+                        key: 'SELL',
+                        type: 'result',
+                        roundingFlag: resRounded.roundingFlag,
+                        roundingRawValue: resRounded.rawValue
+                    });
+                    
+                    this.sellValue = res;
+                    this.onDisplayUpdate(String(res));
+                    this.currentInput = String(res);
+                    this.isNewSequence = true;
+                    return;
                 } else {
                     this.sellValue = val;
                     this._addHistoryEntry({ val, symbol: 'SELL', key: 'SELL', type: 'input' });
@@ -2031,27 +2296,6 @@ class CalculatorEngine {
                     this.isNewSequence = true;
                     return;
                 }
-            }
-            
-            // Apply Rounding
-            if (res !== undefined) {
-                const rounded = this._applyRoundingWithFlag(res);
-                res = rounded.value;
-                const isBusinessResult = key === 'COST' || key === 'SELL' || key === 'MARGIN' || key === 'MARKUP';
-                this._addHistoryEntry({
-                    val: res,
-                    symbol: key,
-                    key: key,
-                    type: 'result',
-                    leadSymbol: isBusinessResult ? '=' : undefined,
-                    percentSuffix: key === 'MARGIN' || key === 'MARKUP',
-                    roundingFlag: rounded.roundingFlag
-                });
-                this.onDisplayUpdate(String(res));
-                this.currentInput = String(res);
-                this.isNewSequence = true;
-                if (key === 'COST') this.costValue = res;
-                if (key === 'SELL') this.sellValue = res;
             }
 
         } catch (e) {
@@ -2071,13 +2315,13 @@ class CalculatorEngine {
     _applyRoundingWithFlag(val) {
         const raw = parseFloat(Number(val).toPrecision(15));
         if (this.settings.isFloat) {
-            return { value: raw, roundingFlag: null };
+            return { value: raw, roundingFlag: null, rawValue: raw };
         }
         const rounded = applyRounding(raw, this.settings.roundingMode, this.settings.decimals);
         let roundingFlag = null;
         if (rounded > raw) roundingFlag = 'up';
         else if (rounded < raw) roundingFlag = 'down';
-        return { value: rounded, roundingFlag };
+        return { value: rounded, roundingFlag, rawValue: raw };
     }
 
     _formatResult(val) {

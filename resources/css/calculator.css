@@ -692,64 +692,125 @@ button[data-key="+"]::after {
 }
 
 .tape-row {
-    display: flex;
-    justify-content: flex-end; /* Allinea tutto a destra di base */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--tape-operator-slot, 30px) auto;
+    justify-content: stretch;
+    align-items: baseline;
     border-bottom: none; /* Removed dashed line */
     padding: 0; /* Removed padding */
     text-shadow: 1px 1px 2px rgba(42, 42, 42, 0.15); 
     width: 100%;
-    line-height: 1.1; /* Compact line height */
+    line-height: 1.2; /* Slightly relaxed for readability */
+    font-size: 1.1rem; /* Consistent base size - @2026-03-07 */
+}
+
+.tape-val {
+    letter-spacing: 0; /* Remove letter-spacing for true monospace - @2026-03-07 */
+    white-space: pre; /* Preserve spaces for alignment - @2026-03-07 */
+    font-variant-numeric: tabular-nums; /* Monospace digits - @2026-03-07 */
+    font-size: 1.1rem; /* Match parent - @2026-03-07 */
+    font-weight: 600;
+    text-align: right;
+    grid-column: 1;
+    justify-self: end;
+    min-width: 0;
 }
 
 .tape-symbol {
     color: var(--tape-symbol-color, #444);
     font-weight: 700;
-    min-width: 25px; /* Spazio fisso per il simbolo */
+    min-width: var(--tape-operator-slot, 30px); /* Fixed slot - @2026-03-07 */
     text-align: right;
-    margin-left: 4px; /* Reduced separation */
+    margin-left: 6px; /* Separation from value - @2026-03-07 */
+    font-size: 1.1rem; /* Match value size - @2026-03-07 */
+    flex-shrink: 0; /* Never shrink - @2026-03-07 */
+    grid-column: 2;
+    justify-self: end;
 }
 
 .tape-symbol.tape-symbol-small {
-    font-size: 0.8em;
-    min-width: 18px;
-}
-.tape-val {
-    letter-spacing: 0.5px; /* Reduced letter spacing */
-    text-align: right;
+    font-size: 0.85em; /* Slightly larger than before - @2026-03-07 */
+    min-width: 20px;
 }
 
-/* Ensure for right-aligned rows the numeric value expands and stays flush right
-   while the symbol remains to the immediate right without forcing extra space. */
+.tape-symbol.tape-symbol-business {
+    font-size: 0.8em; /* Smaller for business abbreviations - @2026-03-07 */
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
 .tape-row.align-right .tape-val {
-    flex: 1 1 auto;
     text-align: right;
-    min-width: 0; /* allow shrinking in narrow containers */
 }
 .tape-row .tape-symbol {
-    flex: 0 0 auto;
-    margin-left: 8px;
     white-space: nowrap;
 }
 
+.tape-rounding-marker {
+    display: inline-block;
+    font-size: 1.14em;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    vertical-align: baseline;
+    cursor: help;
+    position: relative;
+}
+
+.tape-rounding-marker[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 100%;
+    bottom: 0;
+    margin-right: 8px;
+    transform: translateX(-120px);
+    background: rgba(22, 22, 22, 0.55);
+    color: #f5f5f5;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 20;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
 .tape-percent {
-    margin-left: 6px;
+    margin-left: 8px;
     color: var(--tape-percent-color, #9a9a9a);
     font-weight: 600;
-    font-size: 0.85em;
+    font-size: 0.9em; /* Slightly larger - @2026-03-07 */
+    grid-column: 3;
+    white-space: nowrap;
 }
 
 /* Modifiche per specifiche layout */
 .tape-row.align-left {
-    justify-content: flex-start; /* Moltiplicazioni/Divisioni a sinistra */
+    justify-content: stretch;
 }
 .tape-row.align-right {
-    justify-content: flex-end; /* Addizioni/Sottrazioni a destra */
+    justify-content: stretch;
 }
 
-/* Colore Rosso per Negativi (simbolo e valore) */
-.tape-row.negative .tape-val,
-.tape-row.negative .tape-symbol {
+/* Colore Rosso per Negativi (solo numeri negativi e simbolo meno) */
+/* @2026-03-07 */
+.tape-val.negative,
+.tape-symbol.negative {
     color: var(--tape-negative-color, #cc0000);
+}
+
+/* Valori percentuali calcolati più tenui */
+/* @2026-03-07 */
+.tape-val.tape-val-dim {
+    color: var(--tape-dim-color, #888);
+}
+
+/* Dark theme variant */
+@media (prefers-color-scheme: dark) {
+    .tape-val.tape-val-dim {
+        color: var(--tape-dim-color, #999);
+    }
 }
 
 /* Editable tape entries */
@@ -790,9 +851,8 @@ button[data-key="+"]::after {
 }
 
 .tape-row.tape-expression {
-    border-left: 2px solid var(--calc-border, rgba(0,0,0,0.2));
-    padding-left: 6px;
     margin: 2px 0 4px;
+    opacity: 0.94;
 }
 
 .tape-row.tape-expression .tape-val {
@@ -800,11 +860,11 @@ button[data-key="+"]::after {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
-    font-size: 0.92em;
+    font-size: 0.96em;
 }
 
 .tape-row.tape-expression .tape-symbol {
-    display: none;
+    display: inline-block;
 }
 /* --- History Snapshots --- */
 /* --- History Snapshots removed (explicit Save/Load now in keypad) --- */

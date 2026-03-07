@@ -15,6 +15,7 @@ import {
   saveToGistUrl,
   loadFromGistUrl
 } from './utils/dashboard-sync.js';
+import { applyRounding } from './utils/number-utils.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
@@ -658,39 +659,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             row.classList.add("tape-operand");
         }
         
-        // Alignment
-        /* 
-           Logic update: 
-           - Operations (x, /, =) are LEFT aligned (input operand + symbol)
-           - Results (no symbol but key is =) are LEFT aligned (actually usually Right aligned?) 
-             Mult:
-             10 x   (Left)
-             5 =    (Left)
-             50     (Right - Result)
-             
-             If key is x, ÷, = OR symbol is =, align LEFT.
-             CONST entry has key='CONST'.
-        */
-        // Special case: when printing the second operand as an input with symbol '='
-        // for an add/sub chain, we want it right-aligned so the symbol stays to the
-        // right of the number (matches user expectation). Detect this by looking
-        // at the last rendered row's symbol (if any).
-        let forcedAlignRightForEquals = false;
-        if (entry.key === '=' && entry.type === 'input') {
-            const lastRow = paperTape?.querySelector?.('.tape-row:last-child');
-            const lastSym = lastRow?.querySelector('.tape-symbol')?.textContent?.trim();
-            if (lastSym === '+' || lastSym === '-') {
-                forcedAlignRightForEquals = true;
-            }
-        }
-
+        // Tape rows are always right-aligned with a fixed operator slot.
+        // @2026-03-07
         if (isExpressionRow) {
-            row.classList.add("align-left", "tape-expression");
-        } else if (entry.symbol === '◇' || entry.symbol === 'S' || entry.symbol === 'T' || forcedAlignRightForEquals) {
-            row.classList.add("align-right");
-        } else if (['x', '÷', 'CONST'].includes(entry.key) || entry.symbol === '=') {
-            // Keep multiplication/division and explicit '=' result markers left aligned
-            row.classList.add("align-left");
+            row.classList.add("tape-expression", "align-right");
         } else {
             row.classList.add("align-right");
         }
@@ -700,35 +672,62 @@ document.addEventListener("DOMContentLoaded", async () => {
             row.classList.add("result-row");
         }
 
-        // Negative Color
-        const valNum = parseFloat(entry.val);
-        const pctNum = typeof entry.percentValue !== "undefined" ? parseFloat(entry.percentValue) : NaN;
-        const isNeg = (!isNaN(valNum) && valNum < 0) || (!isNaN(pctNum) && pctNum < 0) || entry.symbol === '-' || entry.symbol === 'TAX-';
-        if (isNeg) {
-            row.classList.add("negative");
-        }
-
         const valSpan = document.createElement("span");
         valSpan.className = "tape-val";
         
-        let displayVal = entry.val;
-        // If it's a number, format it
-           if (isExpressionRow) {
-               displayVal = String(entry.expression || entry.val || '');
-           } else if (typeof entry.val === 'number') {
-             displayVal = formatNumber(entry.val);
-        } else if (!isNaN(parseFloat(entry.val)) && entry.key !== '#') {
-             displayVal = formatNumber(entry.val);
+        // Apply negative color only to actual negative numbers
+        // @2026-03-07
+        const valNum = parseFloat(entry.val);
+        if (!isNaN(valNum) && valNum < 0) {
+            valSpan.classList.add("negative");
         }
         
-        if (entry.percentSuffix) {
-            displayVal = `${displayVal}%`;
+        // Dim color for percent input values
+        // @2026-03-07
+        if (entry.symbol === '%') {
+            valSpan.classList.add("tape-val-dim");
         }
-        if (entry.roundingFlag === 'up') {
-            displayVal = `${displayVal} ↑`;
-        } else if (entry.roundingFlag === 'down') {
-            displayVal = `${displayVal} ↓`;
+        
+        let displayVal = entry.val;
+        const isFloatResultLine = Boolean(
+            displaySettings?.isFloat &&
+            entry?.type === 'result' &&
+            hasMoreThanDecimals(entry?.val, 6)
+        );
+        const isResumedOperandLine = Boolean(
+            displaySettings?.isFloat &&
+            entry?.type === 'input' &&
+            entry?.isResumedOperand === true &&
+            (entry?.sourceContext === 'multDiv' || entry?.sourceContext === 'multDivEqual')
+        );
+
+        let floatPolicy = 'default';
+        if (isFloatResultLine) floatPolicy = 'result-full';
+        else if (isResumedOperandLine) floatPolicy = 'resumed-operand';
+
+        // If it's a number, format it
+        if (isExpressionRow) {
+            displayVal = String(entry.expression || entry.val || '');
+        } else if (typeof entry.val === 'number') {
+            displayVal = formatNumber(entry.val, { floatPolicy });
+        } else if (!isNaN(parseFloat(entry.val)) && entry.key !== '#') {
+            displayVal = formatNumber(entry.val, { floatPolicy });
         }
+        
+        const roundingMarker = entry.roundingFlag === 'up'
+            ? '↑'
+            : (entry.roundingFlag === 'down' ? '↓' : '');
+        const roundingTooltipValue = roundingMarker
+            ? formatRawValueForTooltip(entry.roundingRawValue)
+            : "";
+        
+        // Apply monospace padding for right-aligned rows (not expressions)
+        // @2026-03-07
+        if (!isExpressionRow && row.classList.contains('align-right')) {
+            const maxLen = getMaxTapeNumberLength();
+            displayVal = padNumberForAlignment(displayVal, maxLen);
+        }
+        
         valSpan.textContent = displayVal;
 
         // Make editable entries respond to double-click
@@ -740,8 +739,71 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const symSpan = document.createElement("span");
         symSpan.className = "tape-symbol";
+        
+        // Apply negative color to minus operator symbol
+        // @2026-03-07
+        if (entry.symbol === '-') {
+            symSpan.classList.add("negative");
+        }
+        
+        // Abbreviate business symbols and apply smaller font
+        // @2026-03-07
+        const businessSymbols = {
+            'COST': 'CS',
+            'SELL': 'SL',
+            'MARGIN': 'MA',
+            'MARKUP': 'MU'
+        };
+        
+        let displaySymbol = entry.symbol || "";
+        if (businessSymbols[displaySymbol]) {
+            displaySymbol = businessSymbols[displaySymbol];
+            symSpan.classList.add("tape-symbol-business");
+        }
+        
         const lead = entry.leadSymbol ? `${entry.leadSymbol} ` : "";
-        symSpan.textContent = isExpressionRow ? '' : `${lead}${entry.symbol || ""}`;
+        const percentMarker = entry.percentSuffix ? '%' : '';
+        
+        let symbolText = "";
+        if (isExpressionRow) {
+            // Keep expression rows in the same 2-column tape layout using '='.
+            // @2026-03-07
+            symbolText = `${lead}${displaySymbol || '='}`;
+        } else {
+            symbolText = `${lead}${displaySymbol}`;
+        }
+        
+        // Build operator column content: symbol [rounding] [%]
+        // @2026-03-07
+        if (roundingMarker || percentMarker) {
+            if (symbolText.trim()) {
+                symSpan.appendChild(document.createTextNode(symbolText));
+                symSpan.appendChild(document.createTextNode(' '));
+            }
+            
+            if (roundingMarker) {
+                const roundingMarkerEl = document.createElement('span');
+                roundingMarkerEl.className = 'tape-rounding-marker';
+                roundingMarkerEl.textContent = roundingMarker;
+                if (roundingTooltipValue) {
+                    // Tooltip dedicated to arrow marker.
+                    // @2026-03-07
+                    roundingMarkerEl.title = roundingTooltipValue;
+                    roundingMarkerEl.dataset.tooltip = roundingTooltipValue;
+                    roundingMarkerEl.setAttribute('aria-label', `Non arrotondato: ${roundingTooltipValue}`);
+                }
+                symSpan.appendChild(roundingMarkerEl);
+                if (percentMarker) {
+                    symSpan.appendChild(document.createTextNode(' '));
+                }
+            }
+            
+            if (percentMarker) {
+                symSpan.appendChild(document.createTextNode(percentMarker));
+            }
+        } else {
+            symSpan.textContent = symbolText;
+        }
         if (entry.symbol === 'S' || entry.symbol === 'T') {
             symSpan.classList.add("tape-symbol-small");
         }
@@ -750,14 +812,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         row.appendChild(valSpan);
         row.appendChild(symSpan);
 
-        if (!isExpressionRow && typeof entry.percentValue !== "undefined") {
-            const percentSpan = document.createElement("span");
-            percentSpan.className = "tape-percent";
-            const formatted = formatNumber(entry.percentValue);
-            percentSpan.textContent = ` | ${formatted}`;
-            row.appendChild(percentSpan);
-        }
         paperTape.appendChild(row);
+
+        // If percent calculation exists, show the calculated value on a new line
+        // @2026-03-07
+        if (!isExpressionRow && typeof entry.percentValue !== "undefined") {
+            const pctRow = document.createElement("div");
+            pctRow.className = "tape-row align-right";
+
+            const pctValSpan = document.createElement("span");
+            pctValSpan.className = "tape-val";
+            let pctFormatted = formatNumber(entry.percentValue, { floatPolicy });
+            
+            // Apply monospace padding
+            const maxLen = getMaxTapeNumberLength();
+            pctFormatted = padNumberForAlignment(pctFormatted, maxLen);
+            pctValSpan.textContent = pctFormatted;
+            
+            // Apply negative color only to actual negative percent values
+            // @2026-03-07
+            const pctNum = parseFloat(entry.percentValue);
+            if (!isNaN(pctNum) && pctNum < 0) {
+                pctValSpan.classList.add("negative");
+            }
+
+            const pctSymSpan = document.createElement("span");
+            pctSymSpan.className = "tape-symbol";
+            pctSymSpan.textContent = "=";
+
+            pctRow.appendChild(pctValSpan);
+            pctRow.appendChild(pctSymSpan);
+            paperTape.appendChild(pctRow);
+        }
         
         paperTape.scrollTop = paperTape.scrollHeight;
         updateTapeCount();
@@ -811,22 +897,153 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- SNAPSHOTS ---
     // --- UTILS ---
 
-    // Standard JS uses decimal point. 
-    function formatNumber(numStr) {
+    /**
+     * Normalize decimal text and remove trailing zeros.
+     * @param {string} value
+     * @returns {string}
+     * @2026-03-07
+     */
+    function normalizeDecimalString(value) {
+        if (!value) return "0";
+        const normalized = String(value).replace(',', '.');
+        if (!normalized.includes('.')) return normalized;
+        return normalized.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    }
+
+    /**
+     * Check if value has more than N decimal digits.
+     * @param {number|string} numStr
+     * @param {number} maxDecimals
+     * @returns {boolean}
+     * @2026-03-07
+     */
+    function hasMoreThanDecimals(numStr, maxDecimals) {
+        const normalized = String(numStr ?? '').replace(',', '.');
+        const dotIdx = normalized.indexOf('.');
+        if (dotIdx < 0) return false;
+        return normalized.slice(dotIdx + 1).length > maxDecimals;
+    }
+
+    /**
+     * Format a number for display with float-mode tape rules.
+     * @param {number|string} numStr - The number to format
+     * @param {Object} options - Formatting options
+     * @param {'default'|'result-full'|'resumed-operand'} options.floatPolicy
+     * @returns {string} Formatted number
+     * @2026-03-07
+     */
+    function formatNumber(numStr, options = {}) {
         if (numStr === null || numStr === undefined) return "";
         const s = String(numStr);
         const n = Number(s.replace(',', '.'));
         if (Number.isNaN(n)) return s;
 
         let formatted = s;
+        
         if (!displaySettings?.isFloat) {
+            // Fixed decimal mode
             const dec = displaySettings?.decimals ?? 2;
             formatted = n.toFixed(dec);
+        } else {
+            const floatPolicy = options.floatPolicy || 'default';
+            if (!isFinite(n)) {
+                formatted = String(n);
+            } else if (floatPolicy === 'resumed-operand') {
+                const rounded = applyRounding(n, displaySettings?.mode || 'none', 6);
+                formatted = normalizeDecimalString(Number(rounded).toFixed(6));
+            } else if (floatPolicy === 'result-full') {
+                formatted = normalizeDecimalString(s);
+                if (formatted.includes('e') || formatted.includes('E')) {
+                    formatted = normalizeDecimalString(n.toPrecision(15));
+                }
+            } else {
+                formatted = normalizeDecimalString(s);
+            }
         }
 
+        // Apply thousands separator and decimal comma
         const parts = formatted.split(".");
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
         return parts.join(",");
+    }
+
+    /**
+     * Format raw pre-rounded value for rounding tooltip.
+     * @param {number|string} rawValue
+     * @returns {string}
+     * @2026-03-07
+     */
+    function formatRawValueForTooltip(rawValue) {
+        if (rawValue === null || rawValue === undefined) return "";
+        const n = Number(rawValue);
+        if (Number.isNaN(n)) return String(rawValue);
+
+        let normalized = normalizeDecimalString(Number(n).toPrecision(15));
+        if (normalized.includes('e') || normalized.includes('E')) {
+            normalized = String(n);
+        }
+
+        const parts = normalized.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+        return parts.join(',');
+    }
+
+    /**
+     * Calculate the display length of a formatted number (excluding spaces)
+     * @param {string} formattedNum - The formatted number string
+     * @returns {number} Character count
+     * @2026-03-07
+     */
+    function getNumberDisplayLength(formattedNum) {
+        if (!formattedNum) return 0;
+        // Count actual characters (including separators)
+        return String(formattedNum).length;
+    }
+
+    /**
+     * Get maximum number length from recent tape entries for alignment
+     * @param {number} lookbackCount - Number of recent entries to check
+     * @returns {number} Maximum length found
+     * @2026-03-07
+     */
+    function getMaxTapeNumberLength(lookbackCount = 20) {
+        if (!paperTape) return 12; // Default fallback
+        
+        const rows = paperTape.querySelectorAll('.tape-row');
+        const recentRows = Array.from(rows).slice(-lookbackCount);
+        
+        let maxLen = 8; // Minimum reasonable length
+        
+        recentRows.forEach(row => {
+            const valSpan = row.querySelector('.tape-val');
+            if (valSpan) {
+                const text = valSpan.textContent || "";
+                // Remove percentage suffix and rounding flags for length calculation
+                const cleaned = text.replace(/[%↑↓]/g, '').trim();
+                const len = cleaned.length;
+                if (len > maxLen) maxLen = len;
+            }
+        });
+        
+        return Math.min(maxLen, 20); // Cap at reasonable max
+    }
+
+    /**
+     * Pad a formatted number with non-breaking spaces for monospace alignment
+     * @param {string} formattedNum - The formatted number
+     * @param {number} targetLength - Desired total length
+     * @returns {string} Padded number
+     * @2026-03-07
+     */
+    function padNumberForAlignment(formattedNum, targetLength) {
+        if (!formattedNum) return "";
+        const currentLen = formattedNum.length;
+        if (currentLen >= targetLength) return formattedNum;
+        
+        const padding = targetLength - currentLen;
+        // Use non-breaking space (U+00A0) for proper monospace alignment
+        const nbsp = '\u00A0';
+        return nbsp.repeat(padding) + formattedNum;
     }
 
     // Play sound (optional simulation)
