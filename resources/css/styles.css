@@ -1,9 +1,14 @@
 @font-face {
-  font-family: "ChicagoEmbedded";
-  src:
-    local("Chicago"),
-    url("../fonts/chicago.woff2") format("woff2"),
-    url("../fonts/chicago.woff") format("woff");
+  font-family: "ChicagoEmbedded1984";
+  src: url("../fonts/chicago.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ChicagoEmbedded1990";
+  src: url("../fonts/ChicagoFLF.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -414,134 +419,134 @@
 [data-theme="mac1990"] {
   color-scheme: light;
   /* Main UI: Silver/Gray palette with subtle gradients */
-  --bg: #e0e0e0;
-  --bg-gradient: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
-  --panel: #e8e8e8;
-  --panel-gradient: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
-  --panel-soft: #dcdcdc;
-  --text: #222222;
-  --muted: #666666;
-  --accent: #0066cc;
-  --accent-2: #00aa00;
-  --shadow: rgba(0, 0, 0, 0.15);
+  --bg: #d8dee6;
+  --bg-gradient: linear-gradient(180deg, #e3e9f0 0%, #cdd5df 100%);
+  --panel: #e2e7ee;
+  --panel-gradient: linear-gradient(180deg, #edf2f7 0%, #d6dde7 100%);
+  --panel-soft: #d0d8e2;
+  --text: #1e2936;
+  --muted: #556273;
+  --accent: #4a7da8;
+  --accent-2: #4f7d6a;
+  --shadow: rgba(31, 45, 61, 0.16);
   --radius: 4px;
-  --flip-bg: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
-  --flip-text: #222;
-  --day-today-bg: rgba(0, 102, 204, 0.12);
-  --day-today-text: #004488;
-  --calendar-today-border: 1px solid rgba(0, 102, 204, 0.7);
+  --flip-bg: linear-gradient(180deg, #e7edf4 0%, #d2dbe6 100%);
+  --flip-text: #1f2d3d;
+  --day-today-bg: rgba(74, 125, 168, 0.18);
+  --day-today-text: #274866;
+  --calendar-today-border: 1px solid rgba(74, 125, 168, 0.55);
   
   /* Calculator-specific: Minimal pixelated style */
-  --calc-bg: #c0c0c0;
-  --calc-panel: #dfdfdf;
-  --calc-border: #808080;
-  --vfd-bg: #c0c0c0;
-  --vfd-bg-off: #b8b8b8;
-  --vfd-text: #004488;
-  --vfd-text-dim: rgba(0, 68, 136, 0.6);
-  --vfd-accent: rgba(0, 68, 136, 0.3);
-  --vfd-status-off: #888888;
-  --key-bg-default: #dfdfdf;
-  --key-bg-numeric: #c0c0c0;
-  --key-bg-cyan: #a8a8a8;
-  --key-bg-green: #a8a8a8;
-  --key-bg-light-green: #b8b8b8;
-  --key-bg-gray: #dfdfdf;
-  --key-bg-gray-thumb: #c0c0c0;
-  --key-text-light: #dfdfdf;
-  --key-text-dark: #222;
-  --key-text-cyan: #004488;
-  --key-minus-color: #880000;
-  --led-off: #cccccc;
+  --calc-bg: #bcc8d6;
+  --calc-panel: #d7dee7;
+  --calc-border: #7f92a7;
+  --vfd-bg: #d3dbe6;
+  --vfd-bg-off: #c4cfdd;
+  --vfd-text: #2f597e;
+  --vfd-text-dim: rgba(47, 89, 126, 0.62);
+  --vfd-accent: rgba(47, 89, 126, 0.26);
+  --vfd-status-off: #8796a8;
+  --key-bg-default: #d7dee7;
+  --key-bg-numeric: #c2cedc;
+  --key-bg-cyan: #b4c2d3;
+  --key-bg-green: #b9c8d2;
+  --key-bg-light-green: #c7d3df;
+  --key-bg-gray: #d3dbe4;
+  --key-bg-gray-thumb: #bdc8d7;
+  --key-text-light: #253445;
+  --key-text-dark: #1d2a38;
+  --key-text-cyan: #2f597e;
+  --key-minus-color: #7e3f3f;
+  --led-off: #b8c1cd;
   --led-on: #ff6600;
   --led-glow: rgba(255, 102, 0, 0.6);
-  --switch-track: #c0c0c0;
-  --switch-thumb: #808080;
-  --switch-label: #333;
-  --switch-ticks: #555;
-  --paper-bg: #c0c0c0;
-  --paper-tape-bg: #f5f5f0;
-  --paper-ink: #222;
+  --switch-track: #a8b5c6;
+  --switch-thumb: #7a8ea4;
+  --switch-label: #324355;
+  --switch-ticks: #4c5d70;
+  --paper-bg: #bcc8d6;
+  --paper-tape-bg: #eef2f6;
+  --paper-ink: #263340;
   
   /* Calc-sheet specific */
-  --sheet-bg: #e8e8e8;
-  --sheet-cell: #f0f0f0;
-  --sheet-grid: rgba(100, 100, 100, 0.18);
-  --sheet-text: #222;
-  --sheet-header: #d0d0d0;
-  --sheet-header-text: #000;
-  --sheet-toolbar-bg: #e0e0e0;
-  --sheet-toolbar-border: rgba(100, 100, 100, 0.2);
-  --sheet-toolbar-text: #222;
-  --sheet-formula-bg: #f5f5f5;
-  --sheet-formula-text: #222;
-  --sheet-formula-border: rgba(100, 100, 100, 0.15);
-  --sheet-tool-bg: #efefef;
-  --sheet-tool-border: rgba(100, 100, 100, 0.18);
-  --sheet-tool-text: #333;
-  --sheet-tool-active-bg: #ffffff;
-  --sheet-tool-active-border: rgba(0, 102, 204, 0.5);
-  --sheet-cell-focus-outline: rgba(0, 102, 204, 0.5);
-  --sheet-cell-focus-bg: #fafafa;
-  --sheet-cell-active-bg: #fafafa;
-  --sheet-cell-active-shadow: rgba(0, 102, 204, 0.3);
-  --sheet-cell-selected-bg: #f5f5f5;
-  --sheet-cell-selected-shadow: rgba(0, 102, 204, 0.2);
-  --sheet-cell-formula-bg: #ebebeb;
-  --sheet-cell-corner-bg: #dcdcdc;
-  --sheet-cell-caret-color: #000;
-  --sheet-save-indicator-bg: rgba(100, 100, 100, 0.15);
-  --sheet-save-indicator-border: rgba(100, 100, 100, 0.18);
-  --sheet-save-indicator-active-bg: #0066cc;
-  --sheet-save-indicator-active-shadow: rgba(0, 102, 204, 0.15);
-  --sheet-formula-empty-text: rgba(100, 100, 100, 0.5);
-  --sheet-context-menu-bg: #f5f5f5;
-  --sheet-context-menu-border: rgba(100, 100, 100, 0.18);
-  --sheet-context-menu-text: #222;
-  --sheet-context-menu-shadow: rgba(0, 0, 0, 0.1);
-  --sheet-context-menu-btn-hover: #ffffff;
-  --sheet-note-text: rgba(100, 100, 100, 0.6);
-  --sheet-grid-shadow: rgba(255, 255, 255, 0.6);
+  --sheet-bg: #e2e8ef;
+  --sheet-cell: #edf2f7;
+  --sheet-grid: rgba(73, 91, 112, 0.2);
+  --sheet-text: #243243;
+  --sheet-header: #cdd7e3;
+  --sheet-header-text: #1e2b3a;
+  --sheet-toolbar-bg: #dce4ed;
+  --sheet-toolbar-border: rgba(73, 91, 112, 0.22);
+  --sheet-toolbar-text: #243243;
+  --sheet-formula-bg: #edf3f8;
+  --sheet-formula-text: #243243;
+  --sheet-formula-border: rgba(73, 91, 112, 0.16);
+  --sheet-tool-bg: #e7edf4;
+  --sheet-tool-border: rgba(73, 91, 112, 0.2);
+  --sheet-tool-text: #2a3a4c;
+  --sheet-tool-active-bg: #f2f6fa;
+  --sheet-tool-active-border: rgba(74, 125, 168, 0.45);
+  --sheet-cell-focus-outline: rgba(74, 125, 168, 0.45);
+  --sheet-cell-focus-bg: #f4f8fc;
+  --sheet-cell-active-bg: #f4f8fc;
+  --sheet-cell-active-shadow: rgba(74, 125, 168, 0.28);
+  --sheet-cell-selected-bg: #edf3f8;
+  --sheet-cell-selected-shadow: rgba(74, 125, 168, 0.2);
+  --sheet-cell-formula-bg: #e3eaf2;
+  --sheet-cell-corner-bg: #d5deea;
+  --sheet-cell-caret-color: #1e2b3a;
+  --sheet-save-indicator-bg: rgba(73, 91, 112, 0.16);
+  --sheet-save-indicator-border: rgba(73, 91, 112, 0.2);
+  --sheet-save-indicator-active-bg: #4a7da8;
+  --sheet-save-indicator-active-shadow: rgba(74, 125, 168, 0.16);
+  --sheet-formula-empty-text: rgba(73, 91, 112, 0.5);
+  --sheet-context-menu-bg: #ebf1f7;
+  --sheet-context-menu-border: rgba(73, 91, 112, 0.2);
+  --sheet-context-menu-text: #243243;
+  --sheet-context-menu-shadow: rgba(19, 29, 40, 0.12);
+  --sheet-context-menu-btn-hover: #f3f7fb;
+  --sheet-note-text: rgba(73, 91, 112, 0.62);
+  --sheet-grid-shadow: rgba(255, 255, 255, 0.5);
   
   /* Tape/Paper text (consistent with dark theme but lighter) */
-  --tape-text: #222;
-  --tape-symbol-color: #222;
-  --tape-percent-color: #666;
-  --tape-negative-color: #880000;
-  --tape-result-text: #222;
+  --tape-text: #243243;
+  --tape-symbol-color: #243243;
+  --tape-percent-color: #5b6a7b;
+  --tape-negative-color: #7e3f3f;
+  --tape-result-text: #243243;
   
   /* Scrollbar styling */
-  --scrollbar-track-bg: rgba(0, 0, 0, 0.05);
-  --scrollbar-thumb-bg: rgba(0, 0, 0, 0.25);
-  --scrollbar-thumb-hover-bg: rgba(0, 0, 0, 0.35);
+  --scrollbar-track-bg: rgba(31, 45, 61, 0.06);
+  --scrollbar-thumb-bg: rgba(31, 45, 61, 0.24);
+  --scrollbar-thumb-hover-bg: rgba(31, 45, 61, 0.34);
   
   /* History container */
-  --history-container-bg: #d8d8d8;
+  --history-container-bg: #cfd8e2;
   
   /* Moon & Calendar */
-  --moon-title-color: #004488;
-  --moon-phase-color: #0066cc;
-  --calendar-context-menu-bg: #efefef;
-  --calendar-context-menu-text: #222;
-  --calendar-context-menu-border: rgba(0, 102, 204, 0.25);
-  --calendar-context-menu-header-text: #000;
-  --calendar-context-menu-divider: rgba(0, 102, 204, 0.15);
-  --calendar-context-menu-btn-hover: rgba(0, 102, 204, 0.1);
+  --moon-title-color: #2f597e;
+  --moon-phase-color: #4a7da8;
+  --calendar-context-menu-bg: #e6edf4;
+  --calendar-context-menu-text: #223245;
+  --calendar-context-menu-border: rgba(74, 125, 168, 0.32);
+  --calendar-context-menu-header-text: #1e2b3a;
+  --calendar-context-menu-divider: rgba(74, 125, 168, 0.2);
+  --calendar-context-menu-btn-hover: rgba(74, 125, 168, 0.14);
   
   /* Trading Links */
-  --trading-bg: #e0e0e0;
-  --trading-link-bg: rgba(200, 200, 200, 0.6);
-  --trading-link-text: #222;
-  --trading-link-border: rgba(0, 102, 204, 0.18);
-  --trading-link-hover-bg: rgba(180, 180, 180, 0.8);
-  --trading-link-hover-border: rgba(0, 102, 204, 0.35);
+  --trading-bg: #d8e0e9;
+  --trading-link-bg: rgba(196, 209, 222, 0.75);
+  --trading-link-text: #243243;
+  --trading-link-border: rgba(74, 125, 168, 0.24);
+  --trading-link-hover-bg: rgba(179, 195, 211, 0.88);
+  --trading-link-hover-border: rgba(74, 125, 168, 0.4);
   
   /* FX Status */
-  --fx-status-color: #0066cc;
-  --fx-status-cached-color: #666;
-  --fx-change-negative-color: #aa4444;
-  --fx-text-color: #222;
-  --fx-title-color: #222;
+  --fx-status-color: #4a7da8;
+  --fx-status-cached-color: #5f6f82;
+  --fx-change-negative-color: #a05858;
+  --fx-text-color: #223245;
+  --fx-title-color: #223245;
 }
 
 /* === Macintosh 1984 Theme: Pure B&W, stippling, 2px borders === */
@@ -869,7 +874,7 @@
 [data-theme="mac1984"] .vfd-stack-item {
   color: #000 !important;
   text-shadow: none !important;
-  font-family: "ChicagoEmbedded", 'Geneva', 'Chicago', sans-serif !important;
+  font-family: "ChicagoEmbedded1984", 'Geneva', 'Chicago', sans-serif !important;
 }
 
 [data-theme="mac1984"] .calc-body {
@@ -967,12 +972,12 @@
 }
 
 [data-theme="mac1984"] * {
-  font-family: "ChicagoEmbedded", 'Geneva', 'Chicago', sans-serif !important;
+  font-family: "ChicagoEmbedded1984", 'Geneva', 'Chicago', sans-serif !important;
   text-shadow: none !important;
 }
 
 [data-theme="mac1990"] * {
-  font-family: "ChicagoEmbedded", 'Geneva', 'Chicago', sans-serif !important;
+  font-family: "ChicagoEmbedded1990", 'Geneva', 'Chicago', sans-serif !important;
   text-shadow: none !important;
 }
 
@@ -2622,4 +2627,141 @@ body.show-trading .calculator-panel {
 /* === Light theme overrides for fx panel === */
 [data-theme="light"] .fx-card {
   background: var(--panel-soft);
+}
+
+/* === Mac1990 readability refinements === */
+[data-theme="mac1990"] .theme-toggle,
+[data-theme="mac1990"] .status-indicators-grid,
+[data-theme="mac1990"] .theme-select-box,
+[data-theme="mac1990"] .gist-url-field,
+[data-theme="mac1990"] .sync-btn,
+[data-theme="mac1990"] .settings-group,
+[data-theme="mac1990"] .settings-input,
+[data-theme="mac1990"] .settings-btn,
+[data-theme="mac1990"] .network-indicator {
+  border-color: rgba(73, 91, 112, 0.22);
+}
+
+[data-theme="mac1990"] .theme-toggle {
+  background: rgba(228, 235, 243, 0.9);
+  color: #2f3f52;
+}
+
+[data-theme="mac1990"] .theme-toggle:hover {
+  background: rgba(218, 228, 238, 0.96);
+  color: var(--text);
+}
+
+[data-theme="mac1990"] .status-indicators-grid {
+  background: rgba(231, 238, 246, 0.55);
+}
+
+[data-theme="mac1990"] .theme-select-box {
+  background-color: var(--panel);
+  color: var(--text);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='none' stroke='rgba(31,45,61,0.55)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3l3 3 3-3'/%3E%3C/svg%3E");
+}
+
+[data-theme="mac1990"] .gist-url-field,
+[data-theme="mac1990"] .settings-input {
+  background: rgba(229, 236, 244, 0.9);
+  color: var(--text);
+}
+
+[data-theme="mac1990"] .settings-group {
+  background: rgba(210, 220, 232, 0.65);
+}
+
+[data-theme="mac1990"] .settings-btn {
+  background: rgba(220, 228, 238, 0.92);
+}
+
+[data-theme="mac1990"] .settings-btn.primary {
+  background: linear-gradient(140deg, rgba(74, 125, 168, 0.8), rgba(74, 125, 168, 0.45));
+  border-color: rgba(74, 125, 168, 0.58);
+}
+
+[data-theme="mac1990"] .network-indicator {
+  background: rgba(224, 232, 241, 0.8);
+}
+
+[data-theme="mac1990"] .panel-tabs {
+  background: #ccd6e1;
+  border-color: rgba(73, 91, 112, 0.2);
+}
+
+[data-theme="mac1990"] .tab-btn {
+  color: #4b5b6d;
+}
+
+[data-theme="mac1990"] .tab-btn.active {
+  background: #e7edf4;
+  border-color: rgba(73, 91, 112, 0.2);
+  color: #223245;
+}
+
+[data-theme="mac1990"] .tab-btn.active::after {
+  background: #e7edf4;
+}
+
+[data-theme="mac1990"] .tab-btn:hover:not(.active) {
+  background: rgba(231, 238, 246, 0.9);
+  color: #243446;
+}
+
+[data-theme="mac1990"] .tab-placeholder {
+  border-color: rgba(73, 91, 112, 0.2);
+  background: rgba(227, 235, 244, 0.65);
+}
+
+[data-theme="mac1990"] .flip-clock,
+[data-theme="mac1990"] .flip-sep {
+  color: var(--muted);
+}
+
+[data-theme="mac1990"] .fx-chart {
+  background: #d5deea;
+  border-color: rgba(73, 91, 112, 0.2);
+}
+
+[data-theme="mac1990"] .calculator-base {
+  background: #c7d2e0;
+  box-shadow: inset 0 0 0 1px rgba(73, 91, 112, 0.18);
+}
+
+[data-theme="mac1990"] .calc-display {
+  background: #dce5ef;
+  color: #2a4f70;
+  font-weight: 500;
+}
+
+[data-theme="mac1990"] .key {
+  background: #d6dee8;
+  color: #233244;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px rgba(73, 91, 112, 0.16), 0 4px 10px rgba(50, 68, 88, 0.18);
+}
+
+[data-theme="mac1990"] .key.operator {
+  background: #c9d5e3;
+  color: #294865;
+}
+
+[data-theme="mac1990"] .key.function {
+  background: #d1dbe7;
+  color: #314558;
+}
+
+[data-theme="mac1990"] .theme-toggle,
+[data-theme="mac1990"] .settings-build,
+[data-theme="mac1990"] .theme-label,
+[data-theme="mac1990"] .panel-header h1,
+[data-theme="mac1990"] .panel-header h2,
+[data-theme="mac1990"] .settings-group h3,
+[data-theme="mac1990"] .sync-btn,
+[data-theme="mac1990"] .network-indicator,
+[data-theme="mac1990"] .fx-title,
+[data-theme="mac1990"] .fx-price,
+[data-theme="mac1990"] .tab-btn {
+  font-weight: 500;
 }

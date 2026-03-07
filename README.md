@@ -89,6 +89,15 @@ npm run version:sync
 The FX API key is provided by the user in the app Settings UI and stored only for the current webview session.
 `resources/api-keys` is no longer required.
 
+## Theme Fonts
+
+Chicago-style theme fonts are configured as follows:
+
+- `mac1984` uses `resources/fonts/chicago.woff`
+- `mac1990` uses `resources/fonts/ChicagoFLF.ttf`
+
+For source links and legal notes, see `resources/fonts/README.md`.
+
 ## Releases (GitHub)
 
 Recommended flow:
