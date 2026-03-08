@@ -3,6 +3,7 @@ import { getCookie, setCookie } from './utils/cookies.js';
 import {
   initCalcHistoryDB,
   saveCurrentState,
+    loadCurrentState,
   formatTimestamp,
   saveUserSnapshot,
   getAllUserSnapshots,
@@ -424,6 +425,59 @@ document.addEventListener("DOMContentLoaded", async () => {
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
         return parts.join(',');
     }
+
+    // --- Persistence: save on close, restore on open ---
+    function persistCurrentStateSync() {
+        try {
+            const snap = engine.getStateSnapshot();
+            localStorage.setItem('logos_current_state_cache', JSON.stringify(snap));
+            // Best-effort async persistence to IndexedDB (may not complete on unload)
+            saveCurrentState(snap).catch(() => {});
+        } catch (err) {
+            console.warn('persistCurrentStateSync failed', err);
+        }
+    }
+
+    // Browser/tab close - synchronous fallback
+    window.addEventListener('beforeunload', () => {
+        persistCurrentStateSync();
+    });
+
+    // Neutralino native close event - can await async persisting
+    if (window.Neutralino && Neutralino.events && Neutralino.events.on) {
+        Neutralino.events.on('windowClose', async () => {
+            try {
+                const snap = engine.getStateSnapshot();
+                await saveCurrentState(snap);
+                localStorage.setItem('logos_current_state_cache', JSON.stringify(snap));
+            } catch (err) {
+                // fallback already in localStorage
+            }
+        });
+    }
+
+    // On startup: prefer IndexedDB, fallback to localStorage cache
+    (async function tryRestoreSavedState() {
+        try {
+            const saved = await loadCurrentState();
+            if (saved) {
+                engine.restoreStateSnapshot(saved);
+                return;
+            }
+        } catch (err) {
+            // ignore and fallback to cache
+        }
+
+        try {
+            const raw = localStorage.getItem('logos_current_state_cache');
+            if (raw) {
+                const snap = JSON.parse(raw);
+                engine.restoreStateSnapshot(snap);
+            }
+        } catch (err) {
+            // ignore
+        }
+    })();
 
     engine.onMemoryUpdate = (memory) => {
         if (iconMem) iconMem.className = memory.hasMemory ? "vfd-icon on" : "vfd-icon off";

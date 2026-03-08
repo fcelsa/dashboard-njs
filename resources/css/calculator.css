@@ -565,6 +565,11 @@ button[data-key="S_LOAD"]::after {
     letter-spacing: 0.04em;
 }
 
+button[data-key="BACKSPACE"]::after {
+    content: "⌫";
+    font-size: 1.2rem;
+}
+
 
 /* --- COLORI SPECIFICI TASTI QUADRATI --- */
 

@@ -8,6 +8,7 @@ import { getCookie } from './cookies.js';
 const GIST_TOKEN_COOKIE_KEY = 'githubGistToken';
 const GIST_DATA_FILENAME = 'dashboard-state.json';
 const GITHUB_API = 'https://api.github.com';
+const CALENDAR_HOLIDAYS_STORAGE_KEY = 'dashboard_user_holidays';
 
 /**
  * Get GitHub Gist token from cookies
@@ -152,6 +153,50 @@ export async function getCalcSheetState() {
 }
 
 /**
+ * Extract calendar user holiday fields from localStorage
+ */
+export function getCalendarState() {
+  try {
+    const raw = localStorage.getItem(CALENDAR_HOLIDAYS_STORAGE_KEY);
+    const userHolidays = raw ? JSON.parse(raw) : [];
+    return {
+      version: 1,
+      userHolidays: Array.isArray(userHolidays) ? userHolidays : []
+    };
+  } catch (err) {
+    console.error('Error getting calendar state:', err);
+    return {
+      version: 1,
+      userHolidays: []
+    };
+  }
+}
+
+/**
+ * Restore calendar user holiday fields to localStorage
+ */
+export function restoreCalendarState(calendarState) {
+  if (!calendarState) return false;
+
+  // Backward compatibility: accept both { userHolidays: [...] } and raw array format.
+  const parsedHolidays = Array.isArray(calendarState)
+    ? calendarState
+    : (Array.isArray(calendarState.userHolidays) ? calendarState.userHolidays : null);
+  if (!parsedHolidays) return false;
+
+  try {
+    localStorage.setItem(
+      CALENDAR_HOLIDAYS_STORAGE_KEY,
+      JSON.stringify(parsedHolidays)
+    );
+    return true;
+  } catch (err) {
+    console.error('Error restoring calendar state:', err);
+    return false;
+  }
+}
+
+/**
  * Restore all calculator data to IndexedDB
  */
 export async function restoreCalculatorState(state) {
@@ -290,14 +335,14 @@ export async function restoreCalcSheetState(sheetData) {
 export async function getDashboardState() {
   const calculatorState = await getCalculatorState();
   const calcSheetState = await getCalcSheetState();
+  const calendarState = getCalendarState();
 
   return {
     version: 1,
     dashboard: {
       calculator: calculatorState,
       calcSheet: calcSheetState,
-      // Placeholder for future data (calendar, etc)
-      calendar: null
+      calendar: calendarState
     },
     syncedAt: Date.now(),
     syncedFrom: 'calculator-app'
@@ -311,9 +356,14 @@ export async function restoreDashboardState(data) {
   if (!data || !data.dashboard) return false;
 
   const calcResult = await restoreCalculatorState(data.dashboard.calculator);
-  const sheetResult = await restoreCalcSheetState(data.dashboard.calcSheet);
+  const sheetResult = data.dashboard.calcSheet
+    ? await restoreCalcSheetState(data.dashboard.calcSheet)
+    : true;
+  const calendarResult = data.dashboard.calendar
+    ? restoreCalendarState(data.dashboard.calendar)
+    : true;
 
-  return calcResult && sheetResult;
+  return calcResult && sheetResult && calendarResult;
 }
 
 /**
