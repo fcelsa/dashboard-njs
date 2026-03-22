@@ -1,6 +1,6 @@
 {
   "name": "dashboard-njs",
-  "version": "0.10.7",
+  "version": "0.12.7",
   "private": true,
   "description": "Dashboard desktop multipiattaforma con Neutralinojs",
   "scripts": {

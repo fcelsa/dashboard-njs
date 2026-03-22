@@ -51,6 +51,8 @@ class CalculatorEngine {
         this.multDivTotalPendingClear = false;
         this.multDivResults = [];
         this.gtPending = false;
+        this.resultRecallStage = 0;
+        this.subtotalPendingFinalize = false;
         this.pendingDelta = null;
         this.pendingPowerBase = null;
         this.addModeBuffer = "";
@@ -221,6 +223,8 @@ class CalculatorEngine {
         this.totalPendingState = { 1: false };
         this.errorState = false;
         this.gtPending = false; // New state for GT key
+        this.resultRecallStage = 0;
+        this.subtotalPendingFinalize = false;
         this.isReplaying = true;
         this.lastOperation = null;
         this.lastAddSubValue = null;
@@ -259,10 +263,8 @@ class CalculatorEngine {
                         this._handleAddSub(entry.key, entry.val); 
                     } else if (['x', '÷'].includes(entry.key)) {
                         this._handleMultDiv(entry.key, entry.val);
-                    } else if (entry.key === '=' || entry.key === 'Enter') {
-                        this._handleEqual(entry.val);
-                    } else if (entry.key === 'T' || entry.key === 'T1') {
-                        this._handleTotal(1);
+                    } else if (entry.key === '=' || entry.key === 'Enter' || entry.key === 'T' || entry.key === 'T1') {
+                        this._handleEqual(entry.val, entry.key);
                     } else if (entry.key === 'S' || entry.key === 'S1') {
                         this._handleSubTotal(1);
                     } else if (entry.key === 'GT') {
@@ -293,6 +295,15 @@ class CalculatorEngine {
     pressKey(key) {
         if (this.errorState && key !== 'CLEAR_ALL' && key !== 'CE') return;
 
+        const isResultKey = key === '=' || key === 'Enter' || key === 'T' || key === 'T1';
+        if (!isResultKey) {
+            this.resultRecallStage = 0;
+        }
+
+        if (!isResultKey && key !== 'S' && key !== 'S1') {
+            this.subtotalPendingFinalize = false;
+        }
+
         if (this._shouldCheckpoint(key)) {
             this._checkpoint();
         }
@@ -300,7 +311,7 @@ class CalculatorEngine {
         // Rate Confirmation Logic
         if (this.awaitingRate) {
              const isNumeric = (!isNaN(parseFloat(key)) || key === '00' || key === '000' || key === '.');
-             if (key === '=' || key === 'Enter') {
+             if (key === '=' || key === 'Enter' || key === 'T' || key === 'T1') {
                  const rateVal = parseFloat(this.currentInput);
                  if (!isNaN(rateVal)) {
                      this.taxRate = rateVal;
@@ -344,11 +355,9 @@ class CalculatorEngine {
                 break;
             case '=':
             case 'Enter':
-                this._handleEqual();
-                break;
             case 'T':
             case 'T1':
-                this._handleTotal(1);
+                this._handleEqual(null, key);
                 break;
             case 'S':
             case 'S1':
@@ -406,6 +415,7 @@ class CalculatorEngine {
 
     // --- INPUT HANDLERS ---
     _handleNumber(digits) {
+        this.subtotalPendingFinalize = false;
         if (this.settings.addMode) {
             if (this.isNewSequence || this.currentInput === "0") {
                 this.addModeBuffer = "";
@@ -451,6 +461,7 @@ class CalculatorEngine {
     }
 
     _handleDecimal() {
+        this.subtotalPendingFinalize = false;
         if (this.settings.addMode) {
             return;
         }
@@ -853,6 +864,7 @@ class CalculatorEngine {
     }
 
     _handleAddSub(op, explicitVal = null) {
+        this.subtotalPendingFinalize = false;
         if (this.totalPendingState[1]) {
             this.totalPendingState[1] = false;
             this.accumulator = 0;
@@ -1138,8 +1150,7 @@ class CalculatorEngine {
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
             this._accumulateGT(res);
-            this.accumulator += res;
-            this.accumulator = parseFloat(Number(this.accumulator).toPrecision(15));
+            this.accumulator = parseFloat(Number(res).toPrecision(15));
 
             this.lastMultDivResult = res;
             this.awaitingMultDivTotal = true;
@@ -1189,8 +1200,7 @@ class CalculatorEngine {
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
             this._accumulateGT(res);
-            this.accumulator += res;
-            this.accumulator = parseFloat(Number(this.accumulator).toPrecision(15));
+            this.accumulator = parseFloat(Number(res).toPrecision(15));
 
             // Clean up add/sub chain state
             this.pendingAddSubOp = null;
@@ -1351,7 +1361,7 @@ class CalculatorEngine {
         this._emitStatus();
     }
 
-    _handleEqual(explicitVal = null) {
+    _handleEqual(explicitVal = null, resultKey = '=') {
         if (this.pendingDelta !== null) {
             this._handleDelta(explicitVal, 'second');
             return;
@@ -1360,19 +1370,45 @@ class CalculatorEngine {
             this._handlePower(explicitVal, 'second');
             return;
         }
-        // Special Case: If T was just pressed, = clears the accumulator
-        if (this.totalPendingState[1]) {
-            this.accumulator = 0;
-            this.totalPendingState[1] = false;
-            this._addHistoryEntry({ val: 0, symbol: '=', key: '=', type: 'input' });
-            this._emitStatus();
-            if (!this.isReplaying) this.onDisplayUpdate("0");
+
+        if (this.gtPending) {
+            this.gtPending = false;
+            this._printGrandTotal(true, 'GT');
+            this.resultRecallStage = 0;
+            this.subtotalPendingFinalize = false;
             return;
         }
 
-        // --- SCENARIO A: Normal Calculation (A op B =) ---
+        if (this.subtotalPendingFinalize && this.pendingAddSubOp && this.isNewSequence) {
+            const resRounded = this._applyRoundingWithFlag(this.addSubOperand ?? parseFloat(this.currentInput));
+            const res = resRounded.value;
+
+            this._addHistoryEntry({
+                val: this._formatResult(res),
+                symbol: '',
+                key: '=',
+                type: 'result',
+                roundingFlag: resRounded.roundingFlag,
+                roundingRawValue: resRounded.rawValue
+            });
+
+            if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
+
+            this._accumulateGT(res);
+            this.accumulator = parseFloat(Number(res).toPrecision(15));
+            this.currentInput = String(res);
+            this.isNewSequence = true;
+            this.pendingAddSubOp = null;
+            this.lastAddSubValue = res;
+            this.lastAddSubOp = null;
+            this.lastOperation = null;
+            this.subtotalPendingFinalize = false;
+            this.resultRecallStage = 1;
+            this._emitStatus();
+            return;
+        }
+
         if (this.pendingAddSubOp) {
-            // Algebraic add/sub: compute result directly (like mult/div)
             let val = explicitVal !== null ? explicitVal : parseFloat(this.currentInput);
 
             let res = 0;
@@ -1382,15 +1418,12 @@ class CalculatorEngine {
                 res = this.addSubOperand - val;
             }
 
-            // Print the second operand (user pressed '=') so it appears on the tape
             this._addHistoryEntry({ val, symbol: '=', key: '=', type: 'input' });
 
-            // Save constant state for repeat '=' behavior
             this.lastOperation = { op: this.pendingAddSubOp, operand: val };
             const resRounded = this._applyRoundingWithFlag(res);
             res = resRounded.value;
 
-            // Print result line (algebraic, no special symbol — mirrors mult/div)
             this._addHistoryEntry({
                 val: this._formatResult(res),
                 symbol: '',
@@ -1402,19 +1435,7 @@ class CalculatorEngine {
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
             this._accumulateGT(res);
-            this.accumulator += res;
-            this.accumulator = parseFloat(Number(this.accumulator).toPrecision(15));
-
-            // Print running subtotal on tape (mirrors mult/div 'S' line)
-            const accumRounded = this._applyRoundingWithFlag(this.accumulator);
-            this._addHistoryEntry({
-                val: this._formatResult(accumRounded.value),
-                symbol: 'S',
-                key: 'S',
-                type: 'result',
-                roundingFlag: accumRounded.roundingFlag,
-                roundingRawValue: accumRounded.rawValue
-            });
+            this.accumulator = parseFloat(Number(res).toPrecision(15));
 
             this.lastAddSubValue = val;
             this.lastAddSubOp = this.pendingAddSubOp;
@@ -1424,6 +1445,8 @@ class CalculatorEngine {
             this.currentInput = String(res);
             this.isNewSequence = true;
             this.pendingAddSubOp = null;
+            this.subtotalPendingFinalize = false;
+            this.resultRecallStage = 1;
             this._emitStatus();
             return;
         }
@@ -1431,8 +1454,7 @@ class CalculatorEngine {
         if (this.pendingMultDivOp) {
             let val = explicitVal !== null ? explicitVal : parseFloat(this.currentInput);
             const isResumedOperand = explicitVal === null && this.isNewSequence;
-            
-            // Print second operand
+
             this._addHistoryEntry({
                 val,
                 symbol: '=',
@@ -1443,7 +1465,6 @@ class CalculatorEngine {
             });
 
             let res = 0;
-            
             if (this.pendingMultDivOp === 'x') {
                 res = this.multDivOperand * val;
             } else if (this.pendingMultDivOp === '÷') {
@@ -1454,14 +1475,10 @@ class CalculatorEngine {
                 res = this.multDivOperand / val;
             }
 
-            // Save Constant State (User wants to repeat op with stored operand)
-            // Example: 2.4 x 112 = 268.8
-            // stored: op='x', operand=112 (the second term)
             this.lastOperation = { op: this.pendingMultDivOp, operand: val };
             const resRounded = this._applyRoundingWithFlag(res);
             res = resRounded.value;
 
-            // Stampa il risultato dell'operazione (riga sotto, senza simbolo)
             this._addHistoryEntry({
                 val: this._formatResult(res),
                 symbol: '',
@@ -1473,146 +1490,128 @@ class CalculatorEngine {
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
             this._accumulateGT(res);
-
-            // Accumula il risultato nell'addizionatore e stampa il cumulato con S a destra
             this.accumulator += res;
             this.accumulator = parseFloat(Number(this.accumulator).toPrecision(15));
-            const accumRounded = this._applyRoundingWithFlag(this.accumulator);
-            this._addHistoryEntry({
-                val: this._formatResult(accumRounded.value),
-                symbol: 'S',
-                key: 'S',
-                type: 'result',
-                roundingFlag: accumRounded.roundingFlag,
-                roundingRawValue: accumRounded.rawValue
-            });
 
             this.lastMultDivResult = res;
-            this.awaitingMultDivTotal = true;
+            this.awaitingMultDivTotal = false;
             this.multDivResults.push(res);
             this.multDivTotalPendingClear = false;
 
             this.currentInput = String(res);
-            this.isNewSequence = true; 
+            this.isNewSequence = true;
             this.pendingMultDivOp = null;
+            this.subtotalPendingFinalize = false;
+            this.resultRecallStage = 1;
             this._emitStatus();
-            
+            return;
         }
-        // --- SCENARIO A2: Move last mult/div result to adder via = ---
-        else if (this.awaitingMultDivTotal && this.isNewSequence && this.lastMultDivResult !== null) {
-            // Prima pressione di = mostra il totale accumulato; seconda pressione azzera il totalizzatore
-            if (!this.multDivTotalPendingClear) {
-                const total = this._applyRoundingWithFlag(this.accumulator);
-                this.currentInput = String(total.value);
-                this.isNewSequence = true;
-                this.multDivTotalPendingClear = true;
+
+        if (this.lastOperation) {
+            if (this.isNewSequence) {
+                this.lastOperation = null;
+            } else {
+                let val = explicitVal !== null ? explicitVal : parseFloat(this.currentInput);
+
+                this._addHistoryEntry({ val, symbol: '', key: '=', type: 'input' });
 
                 this._addHistoryEntry({
-                    val: this._formatResult(total.value),
-                    symbol: 'T',
-                    key: 'T',
-                    type: 'result',
-                    roundingFlag: total.roundingFlag,
-                    roundingRawValue: total.rawValue
+                    val: this.lastOperation.operand,
+                    symbol: this.lastOperation.op,
+                    key: 'CONST',
+                    type: 'info'
                 });
-                if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(total.value));
-                this._emitStatus();
-                return;
-            }
 
-            // Seconda pressione: azzera totalizzatore
-            this.accumulator = 0;
-            this.accumulator = parseFloat(Number(this.accumulator).toPrecision(15));
-            const total = this._applyRoundingWithFlag(this.accumulator);
-            this.currentInput = String(total.value);
-            this.isNewSequence = true;
-            this.multDivTotalPendingClear = false;
-            this.awaitingMultDivTotal = false;
-            this.lastMultDivResult = null;
-            this.multDivResults = [];
-
-            this._addHistoryEntry({
-                val: this._formatResult(total.value),
-                symbol: 'T',
-                key: 'T',
-                type: 'result',
-                roundingFlag: total.roundingFlag,
-                roundingRawValue: total.rawValue
-            });
-            if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(total.value));
-            this._emitStatus();
-            return;
-        }
-        // --- Constant Calculation (repeat last op on new value) ---
-        else if (this.lastOperation) {
-            if (this.isNewSequence) {
-                // User pressed = immediately after a result — clear constant
-                this.lastOperation = null;
-                return;
-            }
-
-            // User typed a new value (e.g. 2.2) and pressed =
-            // Execute: NewVal [op] [StoredOperand]
-            let val = explicitVal !== null ? explicitVal : parseFloat(this.currentInput);
-            
-            // 1. Print input (The new "constant" base)
-            this._addHistoryEntry({ val, symbol: '', key: '=', type: 'input' });
-
-            // 2. Print the Constant Factor being applied (Visual Feed)
-            // Marked as 'info' so Replay doesn't try to process it as input
-            this._addHistoryEntry({ 
-                val: this.lastOperation.operand, 
-                symbol: this.lastOperation.op, 
-                key: 'CONST', 
-                type: 'info' 
-            });
-
-            let res = 0;
-            if (this.lastOperation.op === 'x') {
-                res = val * this.lastOperation.operand;
-            } else if (this.lastOperation.op === '÷') {
-                if (this.lastOperation.operand === 0 && !this.isReplaying) {
-                     this._triggerError("Error"); return;
+                let res = 0;
+                if (this.lastOperation.op === 'x') {
+                    res = val * this.lastOperation.operand;
+                } else if (this.lastOperation.op === '÷') {
+                    if (this.lastOperation.operand === 0 && !this.isReplaying) {
+                        this._triggerError("Error");
+                        return;
+                    }
+                    res = val / this.lastOperation.operand;
+                } else if (this.lastOperation.op === '+') {
+                    res = val + this.lastOperation.operand;
+                } else if (this.lastOperation.op === '-') {
+                    res = val - this.lastOperation.operand;
                 }
-                res = val / this.lastOperation.operand;
-            } else if (this.lastOperation.op === '+') {
-                res = val + this.lastOperation.operand;
-            } else if (this.lastOperation.op === '-') {
-                res = val - this.lastOperation.operand;
+
+                const resRounded = this._applyRoundingWithFlag(res);
+                res = resRounded.value;
+
+                this._addHistoryEntry({
+                    val: this._formatResult(res),
+                    symbol: '',
+                    key: '=',
+                    roundingFlag: resRounded.roundingFlag,
+                    roundingRawValue: resRounded.rawValue
+                });
+                if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
+
+                if (this.lastOperation.op === '+' || this.lastOperation.op === '-') {
+                    this.accumulator = parseFloat(Number(res).toPrecision(15));
+                } else {
+                    this.accumulator += res;
+                    this.accumulator = parseFloat(Number(this.accumulator).toPrecision(15));
+                }
+
+                this._accumulateGT(res);
+
+                this.currentInput = String(res);
+                this.isNewSequence = true;
+                this.subtotalPendingFinalize = false;
+                this._emitStatus();
+
+                this.resultRecallStage = 1;
+                return;
             }
-
-            const resRounded = this._applyRoundingWithFlag(res);
-            res = resRounded.value;
-
-            // Print Result
-            this._addHistoryEntry({
-                val: this._formatResult(res),
-                symbol: '',
-                key: '=',
-                roundingFlag: resRounded.roundingFlag,
-                roundingRawValue: resRounded.rawValue
-            }); 
-            if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
-
-            this.accumulator += res;
-            this.accumulator = parseFloat(Number(this.accumulator).toPrecision(15));
-            
-            this._accumulateGT(res);
-
-            this.currentInput = String(res);
-            this.isNewSequence = true;
-            this._emitStatus();
-            
-            // Do NOT clear lastOperation. User can chain multiple constants: 2.2 =, 3.5 =, etc.
         }
-        // --- Fallback: Show total if accumulator has content ---
-        else if (this.accumulator !== 0) {
-            this._handleTotal(1);
+
+        if (this.isNewSequence) {
+            if (this.resultRecallStage === 1) {
+                this._printGrandTotal(false, 'T1');
+                this.resultRecallStage = 2;
+                return;
+            }
+            if (this.resultRecallStage === 2) {
+                this._printGrandTotal(true, 'GT');
+                this.resultRecallStage = 0;
+                return;
+            }
             return;
         }
-        else {
-            if (this.isNewSequence) return;
+
+        this.resultRecallStage = 0;
+        if (resultKey === 'T' || resultKey === 'T1') {
+            this.isNewSequence = true;
         }
+        this.subtotalPendingFinalize = false;
+    }
+
+    _printGrandTotal(clearAfter = false, symbol = 'T1') {
+        let val = this.grandTotal;
+        const gtRounded = this._applyRoundingWithFlag(val);
+        val = gtRounded.value;
+
+        this._addHistoryEntry({
+            val: this._formatResult(val),
+            symbol,
+            key: 'GT',
+            type: 'input',
+            roundingFlag: gtRounded.roundingFlag,
+            roundingRawValue: gtRounded.rawValue
+        });
+
+        if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(val));
+        this.currentInput = String(val);
+        this.isNewSequence = true;
+
+        if (clearAfter) {
+            this.grandTotal = 0;
+        }
+
+        this._emitStatus();
     }
 
     _toggleSign() {
@@ -1651,7 +1650,7 @@ class CalculatorEngine {
             // Format symbol usually GT* for Total
             this._addHistoryEntry({
                 val: this._formatResult(val),
-                symbol: 'GT*',
+                symbol: 'GT',
                 key: 'GT',
                 type: 'input',
                 roundingFlag: gtRounded.roundingFlag,
@@ -1714,6 +1713,7 @@ class CalculatorEngine {
     }
     
     _handleSubTotal(accIndex = 1) {
+        this.resultRecallStage = 0;
         this.awaitingMultDivTotal = false;
         this.lastMultDivResult = null;
         this.multDivResults = [];
@@ -1730,7 +1730,7 @@ class CalculatorEngine {
              
              this._addHistoryEntry({
                  val: this._formatResult(val),
-                 symbol: 'GT',
+                 symbol: 'T1',
                  key: 'GT',
                  type: 'input',
                  roundingFlag: gtRounded.roundingFlag,
@@ -1746,6 +1746,36 @@ class CalculatorEngine {
         }
 
         let val = this.accumulator;
+
+        if (this.pendingAddSubOp && this.addSubOperand !== null && this.addSubOperand !== undefined) {
+            val = this.addSubOperand;
+
+            if (!this.isNewSequence) {
+                const tailOperand = parseFloat(this.currentInput);
+                if (!isNaN(tailOperand)) {
+                    if (this.pendingAddSubOp === '+') {
+                        val = this.addSubOperand + tailOperand;
+                    } else if (this.pendingAddSubOp === '-') {
+                        val = this.addSubOperand - tailOperand;
+                    }
+                    val = this._applyRounding(val);
+                }
+            }
+
+            // Commit subtotal as new chain base while keeping +/- chain alive.
+            // This mirrors calculator behavior where S does not break the chain.
+            // @2026-03-22
+            this.addSubOperand = val;
+            this.addSubResults = [];
+            this.lastAddSubValue = val;
+            this.lastAddSubOp = this.pendingAddSubOp;
+            this.lastOperation = null;
+            this.subtotalPendingFinalize = true;
+
+            // Keep accumulator aligned with visible subtotal for T/S continuity.
+            this.accumulator = parseFloat(Number(val).toPrecision(15));
+        }
+
         const subtotalRounded = this._applyRoundingWithFlag(val);
         val = subtotalRounded.value;
         
@@ -1762,12 +1792,13 @@ class CalculatorEngine {
         if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(val));
         
         // Do NOT clear accumulator
-        this.currentInput = "0";
+        this.currentInput = String(val);
         this.isNewSequence = true;
     }
     
     _handleGrandTotal() {
         // Toggle GT Pending State
+        this.resultRecallStage = 0;
         this.gtPending = !this.gtPending;
     }
 
@@ -1822,6 +1853,8 @@ class CalculatorEngine {
             sellValue: this.sellValue,
             pricingMode: this.pricingMode,
             gtPending: this.gtPending,
+            resultRecallStage: this.resultRecallStage,
+            subtotalPendingFinalize: this.subtotalPendingFinalize,
             pendingDelta: this.pendingDelta,
             pendingPowerBase: this.pendingPowerBase,
             expressionTokens: [...this.expressionTokens],
@@ -1863,6 +1896,8 @@ class CalculatorEngine {
         this.sellValue = snapshot.sellValue ?? null;
         this.pricingMode = snapshot.pricingMode ?? 'margin';
         this.gtPending = snapshot.gtPending ?? false;
+        this.resultRecallStage = snapshot.resultRecallStage ?? 0;
+        this.subtotalPendingFinalize = snapshot.subtotalPendingFinalize ?? false;
         this.pendingDelta = snapshot.pendingDelta ?? null;
         this.pendingPowerBase = snapshot.pendingPowerBase ?? null;
         this.expressionTokens = [...(snapshot.expressionTokens || [])];
@@ -1907,6 +1942,8 @@ class CalculatorEngine {
         this.pricingMode = 'margin';
         this.lastOperation = null;
         this.gtPending = false;
+        this.resultRecallStage = 0;
+        this.subtotalPendingFinalize = false;
         this.addModeBuffer = "";
         this._resetExpressionState();
         

@@ -726,6 +726,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             row.classList.add("result-row");
         }
 
+        if (!isExpressionRow && entry?.symbol === 'S') {
+            row.classList.add("tape-subtotal-row");
+        }
+        if (!isExpressionRow && entry?.symbol === 'GT') {
+            row.classList.add("tape-gt-clear-row");
+        }
+
         const valSpan = document.createElement("span");
         valSpan.className = "tape-val";
         
@@ -858,7 +865,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             symSpan.textContent = symbolText;
         }
-        if (entry.symbol === 'S' || entry.symbol === 'T') {
+        if (entry.symbol === 'S' || entry.symbol === 'T' || entry.symbol === 'T1') {
             symSpan.classList.add("tape-symbol-small");
         }
 
@@ -1214,7 +1221,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        if (rateEditActive && (engineKey === '=' || engineKey === 'Enter')) {
+        if (rateEditActive && (engineKey === '=' || engineKey === 'Enter' || engineKey === 'T' || engineKey === 'T1')) {
             pendingRateInput = false;
             rateEditActive = false;
             if (vfdDisplayWrap) vfdDisplayWrap.classList.remove("is-blink");

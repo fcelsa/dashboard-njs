@@ -811,6 +811,16 @@ button[data-key="+"]::after {
     color: var(--tape-dim-color, #888);
 }
 
+.tape-row.tape-subtotal-row .tape-val,
+.tape-row.tape-subtotal-row .tape-symbol {
+    color: var(--tape-subtotal-color, #4a4a4a);
+}
+
+.tape-row.tape-gt-clear-row .tape-val,
+.tape-row.tape-gt-clear-row .tape-symbol {
+    color: var(--tape-gt-clear-color, #1f4fbf);
+}
+
 /* Dark theme variant */
 @media (prefers-color-scheme: dark) {
     .tape-val.tape-val-dim {
