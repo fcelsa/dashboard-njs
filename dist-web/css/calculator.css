@@ -1,0 +1,1088 @@
+/* Calcolatrice stile Olivetti Logos 182 PD Inspired */
+
+.calculator-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 398px; /* Corpo | Right Panel (Carta) */
+    grid-template-rows: 1fr auto;
+    gap: 16px;
+    height: 100%;
+    align-items: start;
+    font-family: "Inter", sans-serif;
+    outline: none;
+}
+
+.calculator-wrapper:focus,
+.calculator-wrapper:focus-visible {
+    outline: none;
+}
+
+/* --- Lato Destro: Paper --- */
+.calc-right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-grow: 1;
+}
+
+/* --- Lato Sinistro: Macchina --- */
+.calc-body {
+    background: var(--calc-bg, #556887);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 
+        inset 0 1px 0 rgba(255,255,255,0.5),
+        0 20px 50px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    border-bottom: 8px solid var(--calc-border, #343e4e);
+}
+
+/* Focus LED */
+.focus-led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--led-off, #300);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+    position: absolute;
+    top: 15px; 
+    left: 32px;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    border: 1px solid #222;
+}
+
+/* Accensione LED su Focus */
+.calculator-wrapper.is-pointer-over .focus-led,
+.calculator-wrapper:focus-within .focus-led,
+.calculator-wrapper.is-keyboard-focus .focus-led {
+    background-color: var(--led-on, #ff3300);
+    box-shadow: 0 0 5px var(--led-on, #ff3300), inset 0 1px 1px rgba(255,255,255,0.3);
+}
+
+/* Display VFD */
+.vfd-display {
+    background: var(--vfd-bg, #0d1110);
+    padding: 10px 15px;
+    border-radius: 4px;
+    border: 4px solid var(--calc-border, #343e4e);
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    margin-bottom: 8px;
+    margin-top: 10px;
+    position: relative;
+    z-index: 10;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vfd-display.is-off {
+    background: var(--vfd-bg-off, #070a0a);
+    box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.95);
+}
+
+.vfd-display.is-off .vfd-text,
+.vfd-display.is-off .vfd-stack,
+.vfd-display.is-off .vfd-status-icons {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.vfd-text,
+.vfd-stack,
+.vfd-status-icons {
+    transition: opacity 0.25s ease;
+}
+
+.vfd-display.is-blink .vfd-text,
+.vfd-display.is-blink .vfd-stack,
+.vfd-display.is-blink .vfd-status-icons {
+    animation: vfdBlink 0.8s steps(2, start) infinite;
+}
+
+.vfd-icon.blink {
+    animation: vfdBlink 0.8s steps(2, start) infinite;
+}
+
+@keyframes vfdBlink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+.vfd-text {
+    flex-grow: 1;
+    text-align: right;
+    font-family: "Droid Sans Mono", monospace;
+    font-size: 2.1rem;
+    color: var(--vfd-text, #00ffaa);
+    text-shadow: 0 0 8px var(--vfd-accent, rgba(0, 255, 170, 0.5));
+    letter-spacing: 0.1em;
+    margin: 0 10px;
+}
+
+.vfd-stack {
+    position: absolute;
+    left: 42px;
+    right: 14px;
+    bottom: 6px;
+    font-family: "Droid Sans Mono", monospace;
+    font-size: 0.55rem;
+    color: var(--vfd-text-dim, rgba(0, 255, 170, 0.7));
+    letter-spacing: 0.05em;
+    text-align: left;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Status Icons VFD */
+.vfd-status-icons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: sans-serif;
+    font-size: 0.7rem;
+    color: var(--vfd-status-off, #004433);
+}
+.vfd-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.vfd-icon-value {
+    font-family: "Droid Sans Mono", monospace;
+    font-size: 0.55rem;
+    color: var(--vfd-text-dim, rgba(0, 255, 170, 0.7));
+    letter-spacing: 0.05em;
+}
+.vfd-icon {
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.vfd-indicator-soft {
+    font-family: "Droid Sans Mono", monospace;
+    font-size: 0.65rem;
+    color: var(--vfd-text-dim, rgba(0, 255, 170, 0.6));
+    letter-spacing: 0.05em;
+    min-height: 0.7rem;
+}
+.vfd-icon.on {
+    color: var(--led-on, #ff3300);
+    text-shadow: 0 0 5px var(--led-glow, rgba(255, 50, 0, 0.8));
+}
+.vfd-icon.off {
+    opacity: 0.3;
+}
+
+.vfd-icon.mem-pending {
+    animation: memPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes memPulse {
+    0%, 100% {
+        opacity: 0.25;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+
+/* --- SWITCHES ROW --- */
+.calc-switches {
+    display: flex;
+    justify-content: space-between; /* Distribuisce uniformemente nella larghezza */
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px; /* Ridotto per avvicinare alla tastiera */
+    padding: 0 5px; /* Margini laterali minimi */
+}
+
+.switch-wrapper {
+    display: grid;
+    grid-template-rows: auto auto;
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: center;
+    position: relative;
+}
+
+.switch-wrapper.multi-switch {
+    grid-template-columns: auto 1fr;
+}
+
+.switch-wrapper:not(.multi-switch) {
+    grid-template-columns: auto auto;
+}
+
+.switch-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--switch-label, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    min-width: 28px;
+    text-align: right;
+}
+
+.switch-wrapper.multi-switch .switch-label {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+}
+
+.switch-wrapper.multi-switch .switch-slider {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.switch-wrapper:not(.multi-switch) .switch-label {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+}
+
+.switch-wrapper:not(.multi-switch) .switch {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+}
+
+.switch-wrapper:not(.multi-switch)::after {
+    content: "ON";
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    margin-top: 1px;
+    font-size: 0.65rem;
+    font-family: sans-serif;
+    color: var(--switch-ticks, #bbb);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1;
+}
+
+/* Switch Multi-Posizione (Slider) */
+/* .multi-switch { } Rimosso regola vuota */
+.ro-switch { width: 60px; }  /* 3 posizioni */
+.dec-switch { width: 120px; } /* 6 posizioni */
+
+/* Ticks Label (Stile etichette 0 5 9 ecc) */
+.switch-ticks {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 2px;
+    margin-top: 2px; /* Piccola distanza dallo slider */
+}
+
+.switch-wrapper.multi-switch .switch-ticks {
+    grid-column: 2;
+    grid-row: 2;
+}
+.switch-ticks span {
+    font-size: 0.65rem;
+    font-family: sans-serif;
+    color: var(--switch-ticks, #bbb);
+    font-weight: 600;
+    width: 10px;
+    text-align: center;
+}
+
+/* INPUT RANGE Custom Styling */
+input[type=range].switch-slider {
+    -webkit-appearance: none; /* Rimuove styling default browser */
+    appearance: none;         /* Standard property */
+    width: 100%;
+    background: transparent;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Traccia dello Slider */
+input[type=range].switch-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 16px;
+    cursor: pointer;
+    background: var(--switch-track, #222);
+    border-radius: 2px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* Pomello (Thumb) dello Slider */
+input[type=range].switch-slider::-webkit-slider-thumb {
+    height: 12px;
+    width: 12px;
+    border-radius: 1px;
+    background: var(--switch-thumb, #e0e0dc);
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: 2px;
+    box-shadow: 
+        0 1px 2px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+/* Switch Toggle Styling (Slide puro per ACC/PRT) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 32px; /* Larghezza fissa per i 2 stati */
+    height: 16px;
+}
+/* ... resto invariato per input e slider del checkbox ... */
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--key-minus-color, #b74040);
+    transition: .2s;
+    border-radius: 2px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--switch-thumb, #e0e0dc);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.5);
+    transition: .2s;
+    border-radius: 1px;
+}
+
+input:checked + .slider {
+    background-color: var(--accent-2, #9bb3a8);
+}
+
+input:checked + .slider:before {
+    transform: translateX(16px);
+    background-color: var(--switch-thumb, #e0e0dc);
+}
+
+
+/* Container Tastiera */
+.calc-keyboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    background: var(--calc-panel, #333333);
+    border-radius: 8px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.calc-func-keys {
+    display: flex;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 552px;
+    --func-key-height: 28px;
+    --func-key-font-size: 0.8rem;
+    --func-key-base-bg: var(--key-bg-gray, #4a4a4a);
+    --func-key-top-bg: var(--key-bg-gray-thumb, #b0b0b0);
+    --func-key-top-color: var(--key-text-dark, #111);
+    margin: 0 auto; /* Centrato nel container */
+}
+
+.calc-func-keys .key-rect {
+    height: var(--func-key-height);
+    font-size: var(--func-key-font-size);
+    background-color: var(--func-key-base-bg);
+}
+
+.calc-func-keys .key-rect::after {
+    height: calc(var(--func-key-height) - 9px);
+    background-color: var(--func-key-top-bg);
+    color: var(--func-key-top-color);
+}
+
+.calc-main-keys {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+}
+
+/* BLOCCHI TASTI */
+.key-block {
+    display: grid;
+    gap: 8px;
+}
+
+/* Blocco 2: Centrale (Numerico - 4 colonne x 4 righe) */
+.block-center {
+    grid-template-columns: repeat(4, 52px);
+    grid-template-rows: repeat(4, 52px);
+}
+
+/* Blocco 3: Destra (Totali) */
+.block-right {
+    grid-template-columns: repeat(5, 52px);
+    grid-template-rows: repeat(4, 52px);
+}
+
+/* --- STILI TASTI --- */
+.key-btn {
+    border: none;
+    font-family: "Inter", sans-serif;
+    font-size: 1.08rem;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 
+        0 4px 0 rgba(0,0,0,0.3),
+        0 5px 8px rgba(0,0,0,0.2);
+    transition: transform 0.05s, box-shadow 0.05s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+.key-btn:active, .key-btn.active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+/* Pseudo-elemento per il "Tasto Fisico" sopra la base */
+.key-btn::after {
+    content: attr(data-key);
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.2), 
+        0 2px 4px rgba(0,0,0,0.3); /* Ombra del tasto sulla base */
+    z-index: 2;
+}
+
+/* --- TASTI RETTANGOLARI cost sell margin tax+ tax- rate --- */
+.key-rect {
+    width: 84px;
+    height: 36px;
+    border-radius: 4px;
+    background: var(--key-bg-default, #2b3036);
+    color: var(--key-text-light, #eee);
+    font-size: 0.74rem;
+}
+.key-rect::after {
+    width: 76px; /* Adattato al nuovo width */
+    height: 27px; /* Adattato al nuovo height */
+    border-radius: 3px;
+    /* Il colore viene definito da key-gray */
+}
+
+/* --- TASTI ROTONDI (Blocco Centrale) --- */
+.key-round {
+    background-color: var(--key-bg-default, #e6e4d5);
+    border-radius: 4px;
+    color: transparent;
+}
+
+.key-round::after {
+    width: 40px; height: 40px;
+    background: var(--key-bg-numeric, #383e45);
+    border-radius: 50%;
+    color: var(--key-text-light, #e6e4d5);
+    font-size: 1.2rem;
+}
+
+/* Tasto 0 Doppio: Base larga, tasto fisico largo "pillola" */
+.key-round.key-double-h {
+    grid-column: span 2;
+    background-color: var(--key-bg-default, #e6e4d5);
+}
+.key-round.key-double-h::after {
+    width: 92px;               /* Più largo */
+    border-radius: 20px;       /* Pillola */
+}
+
+
+/* --- TASTI QUADRATI (Blocchi Laterali) --- */
+/* Stesso concetto del round: Base + Tasto sopra, ma tasto è quadrato */
+
+.key-square {
+    border-radius: 4px;        /* Base Quadrata */
+    color: transparent;        /* Nascondi testo base */
+}
+
+.key-square::after {
+    width: 40px; height: 40px; /* Dimensioni tasto fisico quadrato */
+    border-radius: 5px;        /* Angoli leggermente smussati */
+    font-size: 1.2rem;
+}
+
+/* Doppio Verticale */
+.key-square.key-double-v {
+    grid-row: span 2;
+    height: 100%;
+}
+.key-square.key-double-v::after {
+    height: 98px; /* Altezza doppia */
+}
+/* Doppio Orizzontale */
+.key-square.key-double-h {
+    grid-column: span 2;
+    width: 100%;
+}
+.key-square.key-double-h::after {
+    width: 98px;
+}
+
+.calc-key-spacer {
+    display: block;
+    width: 52px;
+    height: 52px;
+    pointer-events: none;
+}
+
+button[data-key="S_SAVE"]::after {
+    content: "SALVA";
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+}
+
+button[data-key="S_LOAD"]::after {
+    content: "RICH";
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+}
+
+button[data-key="BACKSPACE"]::after {
+    content: "⌫";
+    font-size: 1.2rem;
+}
+
+
+/* --- COLORI SPECIFICI TASTI QUADRATI --- */
+
+/* Blocco SX: Azzurro */
+.key-cyan {
+    background-color: var(--key-bg-cyan, #5f8a9e);
+}
+.key-cyan::after {
+    background-color: var(--key-bg-numeric, #383e45);
+    color: var(--key-text-cyan, #89cff0);
+}
+
+/* Blocco DX: Verde Scuro (Tasto T, S, ecc) */
+.key-green {
+    background-color: var(--key-bg-green, #67a392);
+}
+.key-green::after {
+    background-color: var(--key-bg-numeric, #383e45);
+    color: var(--key-text-light, #e6e4d5);
+}
+/* Correzione richiesta: "il colore del testo è uguale a quello della parte di sfondo" -> Sfondo del tasto o sfondo della base? 
+   Se intendi "testo colore verde", ok. Se intendi "colore crema", ok.
+   Dalle foto Logos 182, i tasti verdi hanno testo bianco. I tasti chiari hanno testo verde scuro.
+   "Escluso i tasti del secondo totalizzatore che hanno un colore verdi più chiaro... ed il colore del testo è uguale a quello della parte di sfondo" -> Forse intendevi "colore testo uguale a quello dello sfondo (scuro)"?
+   Provo: Tasti scuri -> Testo Bianco. Tasti Chiari -> Testo Verde Scuro.
+*/
+
+
+/* Blocco DX: Verde Chiaro (T2, S2, op2) */
+.key-light-green {
+    background-color: var(--key-bg-light-green, #8da39f);
+}
+.key-light-green::after {
+    background-color: var(--key-bg-numeric, #383e45);
+    color: var(--key-text-light, #e6e4d5);
+}
+
+/* --- OVERRIDES SPECIFICI PER TASTI --- */
+
+/* Tasto Meno: Rosso e Grande */
+button[data-key="-"]::after {
+    color: var(--key-minus-color, #b74040);
+    font-size: 2.2rem;
+}
+
+/* Tasto Più: Grande */
+button[data-key="+"]::after {
+    font-size: 1.8rem;
+}
+
+/* Tasti Funzione Rettangolari (Grigi) */
+.key-gray {
+    background-color: var(--key-bg-gray, #4a4a4a);
+}
+.key-gray::after {
+    background-color: var(--key-bg-gray-thumb, #b0b0b0);
+    color: var(--key-text-dark, #111);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+
+/* Carta */
+.paper-container {
+    background: var(--paper-bg, #556887);
+    box-shadow: 
+        inset 0 10px 20px rgba(0,0,0,0.5),
+        0 5px 15px rgba(0,0,0,0.3);
+    height: 572px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 4px;
+    padding: 7px;
+}
+
+/* Rotolo di carta */
+.paper-tape {
+    background-color: var(--paper-tape-bg, #fdfae7);
+    background-image: 
+        linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0) 5%, rgba(0,0,0,0) 95%, rgba(0,0,0,0.06) 100%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+    color: var(--paper-ink, #2a2a2a);
+    
+    font-family: "Courier Prime", "Courier New", monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.45;
+    
+    height: 100%;
+    overflow-y: scroll; /* Scrollbar sempre visibile per evitare "salto" layout */
+    display: flex;
+    flex-direction: column;
+    
+    padding: 14px 10px;
+    box-shadow: 
+        0 0 5px rgba(0,0,0,0.2), /* Ombra esterna leggera */
+        inset 0 0 40px rgba(139, 137, 110, 0.15); /* Ombra interna ingiallita */
+        
+    /* Simulazione bordi strappati o irregolari non facile in pure CSS senza immagini mask, 
+       ma possiamo dare un effetto di carta spessa */
+    /* transform: perspective(1000px) rotateX(2deg); RIMOSSO per evitare conflitti con scroll/pointer events */
+    /* transform-origin: top center; */
+}
+
+/* Scrollbar styling per WebKit (Chrome, Safari) - opzionale per integrarla meglio */
+.paper-tape::-webkit-scrollbar {
+    width: 10px;
+}
+.paper-tape::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-bg, rgba(0,0,0,0.05));
+    border-radius: 4px;
+}
+.paper-tape::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-bg, rgba(0,0,0,0.2)); 
+    border-radius: 4px;
+}
+.paper-tape::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover-bg, rgba(0,0,0,0.3));
+}
+
+/* Fix per allineamento in basso che non rompe lo scroll: 
+   Il primo elemento spinge giù tutto il contenuto. 
+   Quando c'è overflow, margin-top collassa e lo scroll funziona. */
+.paper-tape > :first-child {
+    margin-top: auto;
+}
+
+.tape-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--tape-operator-slot, 30px) auto;
+    justify-content: stretch;
+    align-items: baseline;
+    border-bottom: none; /* Removed dashed line */
+    padding: 0; /* Removed padding */
+    text-shadow: 1px 1px 2px rgba(42, 42, 42, 0.15); 
+    width: 100%;
+    line-height: 1.2; /* Slightly relaxed for readability */
+    font-size: 1.1rem; /* Consistent base size - @2026-03-07 */
+}
+
+.tape-val {
+    letter-spacing: 0; /* Remove letter-spacing for true monospace - @2026-03-07 */
+    white-space: pre; /* Preserve spaces for alignment - @2026-03-07 */
+    font-variant-numeric: tabular-nums; /* Monospace digits - @2026-03-07 */
+    font-size: 1.1rem; /* Match parent - @2026-03-07 */
+    font-weight: 600;
+    text-align: right;
+    grid-column: 1;
+    justify-self: end;
+    min-width: 0;
+}
+
+.tape-symbol {
+    color: var(--tape-symbol-color, #444);
+    font-weight: 700;
+    min-width: var(--tape-operator-slot, 30px); /* Fixed slot - @2026-03-07 */
+    text-align: right;
+    margin-left: 6px; /* Separation from value - @2026-03-07 */
+    font-size: 1.1rem; /* Match value size - @2026-03-07 */
+    flex-shrink: 0; /* Never shrink - @2026-03-07 */
+    grid-column: 2;
+    justify-self: end;
+}
+
+.tape-symbol.tape-symbol-small {
+    font-size: 0.85em; /* Slightly larger than before - @2026-03-07 */
+    min-width: 20px;
+}
+
+.tape-symbol.tape-symbol-business {
+    font-size: 0.8em; /* Smaller for business abbreviations - @2026-03-07 */
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.tape-row.align-right .tape-val {
+    text-align: right;
+}
+.tape-row .tape-symbol {
+    white-space: nowrap;
+}
+
+.tape-rounding-marker {
+    display: inline-block;
+    font-size: 1.14em;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    vertical-align: baseline;
+    cursor: help;
+    position: relative;
+}
+
+.tape-rounding-marker[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 100%;
+    bottom: 0;
+    margin-right: 8px;
+    transform: translateX(-120px);
+    background: rgba(22, 22, 22, 0.55);
+    color: #f5f5f5;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 20;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+.tape-percent {
+    margin-left: 8px;
+    color: var(--tape-percent-color, #9a9a9a);
+    font-weight: 600;
+    font-size: 0.9em; /* Slightly larger - @2026-03-07 */
+    grid-column: 3;
+    white-space: nowrap;
+}
+
+/* Modifiche per specifiche layout */
+.tape-row.align-left {
+    justify-content: stretch;
+}
+.tape-row.align-right {
+    justify-content: stretch;
+}
+
+/* Colore Rosso per Negativi (solo numeri negativi e simbolo meno) */
+/* @2026-03-07 */
+.tape-val.negative,
+.tape-symbol.negative {
+    color: var(--tape-negative-color, #cc0000);
+}
+
+/* Valori percentuali calcolati più tenui */
+/* @2026-03-07 */
+.tape-val.tape-val-dim {
+    color: var(--tape-dim-color, #888);
+}
+
+.tape-row.tape-subtotal-row .tape-val,
+.tape-row.tape-subtotal-row .tape-symbol {
+    color: var(--tape-subtotal-color, #4a4a4a);
+}
+
+.tape-row.tape-gt-clear-row .tape-val,
+.tape-row.tape-gt-clear-row .tape-symbol {
+    color: var(--tape-gt-clear-color, #1f4fbf);
+}
+
+/* Dark theme variant */
+@media (prefers-color-scheme: dark) {
+    .tape-val.tape-val-dim {
+        color: var(--tape-dim-color, #999);
+    }
+}
+
+/* Editable tape entries */
+.tape-editable {
+    cursor: pointer;
+}
+.tape-editable:hover {
+    text-decoration: underline dotted;
+}
+.tape-edit-input {
+    width: 80%;
+    max-width: 10ch;
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed currentColor;
+    color: inherit;
+    text-align: right;
+    outline: none;
+    padding: 0;
+}
+
+/* Result Row Separation */
+.tape-row.result-row {
+    margin-bottom: 15px; /* Spazio extra dopo il risultato */
+    border-bottom: 2px solid rgba(0,0,0,0.1); /* Linea di chiusura blocco */
+    padding-bottom: 2px;
+}
+.tape-row.result-row .tape-symbol {
+    font-size: 0.8em; /* Simbolo più evidente */
+    color: var(--tape-result-text, #444);
+}
+
+.tape-row.result-row .tape-symbol.tape-symbol-small {
+    font-size: 0.8em;
+    min-width: 12px;
+}
+
+.tape-row.tape-expression {
+    margin: 2px 0 4px;
+    opacity: 0.94;
+}
+
+.tape-row.tape-expression .tape-val {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-size: 0.96em;
+}
+
+.tape-row.tape-expression .tape-symbol {
+    display: inline-block;
+}
+/* --- History Snapshots --- */
+/* --- History Snapshots removed (explicit Save/Load now in keypad) --- */
+
+/* --- Save/Load Dialogs --- */
+.calc-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.calc-dialog {
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    max-width: 420px;
+    width: 90%;
+    color: var(--text);
+    font-family: inherit;
+    animation: dialogPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes dialogPop {
+    from { transform: scale(0.9) translateY(10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.calc-dialog-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+}
+
+.calc-dialog-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.calc-dialog-content {
+    margin-bottom: 24px;
+}
+
+.calc-dialog-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.calc-dialog-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122, 166, 194, 0.2);
+}
+
+.calc-dialog-input::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+}
+
+.calc-dialog-list {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.calc-dialog-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.calc-dialog-list-item:hover {
+    background: var(--panel-soft);
+}
+
+.calc-dialog-list-item:last-child {
+    border-bottom: none;
+}
+
+.calc-dialog-list-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.calc-dialog-list-item-name {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.calc-dialog-list-item-meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.calc-dialog-list-item-delete {
+    background: #d64545;
+    border: none;
+    color: #fff;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-left: 8px;
+    transition: background 0.15s ease, transform 0.1s;
+}
+
+.calc-dialog-list-item-delete:hover {
+    background: #ff4d4d;
+    transform: scale(1.05);
+}
+
+.calc-dialog-list-item-delete:active {
+    transform: scale(0.95);
+}
+
+.calc-dialog-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.calc-dialog-btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel-soft);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.calc-dialog-btn:hover {
+    background: var(--bg);
+    border-color: var(--muted);
+    transform: translateY(-1px);
+}
+
+.calc-dialog-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+}
+
+.calc-dialog-btn.primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.calc-dialog-btn:active {
+    transform: translateY(1px);
+}
+
+.calc-dialog-btn.danger {
+    background: #d64545;
+    border-color: #b03535;
+    color: #fff;
+}
+
+.calc-dialog-btn.danger:hover {
+    background: #ff4d4d;
+}
+
+.calc-dialog-error {
+    color: #ff7777;
+    font-size: 0.85em;
+    margin-top: 8px;
+}

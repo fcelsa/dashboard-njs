@@ -68,6 +68,34 @@ macOS-only build:
 ./scripts/build-macos-app.sh
 ```
 
+## Web Build (GitHub Pages)
+
+Create a static web artifact without changing desktop release outputs:
+
+```bash
+npm run build:web
+```
+
+Output is generated in `dist-web/`.
+
+Default base path behavior:
+
+- if `BASE_PATH` (or `PAGES_BASE_PATH`) is set, that value is used
+- otherwise, if `GITHUB_REPOSITORY` exists, base path becomes `/<repo>/`
+- fallback is `./` (local static preview friendly)
+
+Examples:
+
+```bash
+# GitHub Pages project site
+BASE_PATH=/dashboard-njs/ npm run build:web
+
+# root domain / custom domain
+BASE_PATH=/ npm run build:web
+```
+
+A dedicated GitHub Pages workflow is available in `.github/workflows/pages.yml`.
+
 ## Versioning
 
 Set the version only in `package.json`.
