@@ -1121,32 +1121,24 @@ class CalculatorEngine {
         // CASE 1: Mult/Div — A × B% = A * B/100 ; A ÷ B% = A / (B/100)
         if (this.pendingMultDivOp) {
             const base = this.multDivOperand;
+            let resRaw;
             let res;
 
             if (this.pendingMultDivOp === 'x') {
-                res = this._applyRounding(base * (val / 100));
+                resRaw = base * (val / 100);
             } else if (this.pendingMultDivOp === '÷') {
                 if (val === 0 && !this.isReplaying) {
                     this._triggerError("Error");
                     return;
                 }
-                res = this._applyRounding(base / (val / 100));
+                resRaw = base / (val / 100);
             }
 
             // Tape: print input percentage
             this._addHistoryEntry({ val, symbol: '%', key: '%', type: 'input' });
 
             // Tape: print result
-            const resRounded = this._applyRoundingWithFlag(res);
-            res = resRounded.value;
-            this._addHistoryEntry({
-                val: this._formatResult(res),
-                symbol: '',
-                key: '=',
-                type: 'result',
-                roundingFlag: resRounded.roundingFlag,
-                roundingRawValue: resRounded.rawValue
-            });
+            res = this._addRoundedResultEntry(resRaw, '=');
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
             this._accumulateGT(res);
@@ -1170,9 +1162,11 @@ class CalculatorEngine {
             const base = this.addSubOperand;
             if (base === null || base === undefined || isNaN(base)) return;
 
-            const percentAmount = this._applyRounding(base * (val / 100));
-            const signedPercentValue = this.pendingAddSubOp === '-' ? -percentAmount : percentAmount;
-            let res = this._applyRounding(base + signedPercentValue);
+            const percentAmountRaw = base * (val / 100);
+            const signedPercentValueRaw = this.pendingAddSubOp === '-' ? -percentAmountRaw : percentAmountRaw;
+            const resRaw = base + signedPercentValueRaw;
+            const percentValue = this._applyRounding(signedPercentValueRaw);
+            let res;
 
             // Tape: percentage input line with absolute value shown alongside
             this._addHistoryEntry({
@@ -1180,22 +1174,13 @@ class CalculatorEngine {
                 symbol: '%',
                 key: '%',
                 type: 'input',
-                percentValue: signedPercentValue,
+                percentValue: percentValue,
                 percentBase: base,
                 percentOp: this.pendingAddSubOp
             });
 
             // Tape: result total
-            const resRounded = this._applyRoundingWithFlag(res);
-            res = resRounded.value;
-            this._addHistoryEntry({
-                val: this._formatResult(res),
-                symbol: '*',
-                key: '%',
-                type: 'result',
-                roundingFlag: resRounded.roundingFlag,
-                roundingRawValue: resRounded.rawValue
-            });
+            res = this._addRoundedResultEntry(resRaw, '%');
 
             if (!this.isReplaying) this.onDisplayUpdate(this._formatResult(res));
 
@@ -2118,8 +2103,9 @@ class CalculatorEngine {
             if (key === 'TAX+') {
                 // TAX+ behaves like A + A*(taxRate/100), print as percentage operation
                 // @2026-03-07
-                const taxAmount = this._applyRounding(val * (this.taxRate / 100));
-                res = this._applyRounding(val + taxAmount);
+                const taxAmountRaw = val * (this.taxRate / 100);
+                const taxAmount = this._applyRounding(taxAmountRaw);
+                const resRaw = val + taxAmountRaw;
                 
                 // Entry 0: Base operand with + operator
                 this._addHistoryEntry({
@@ -2141,16 +2127,7 @@ class CalculatorEngine {
                 });
                 
                 // Entry 2: Result with total
-                const resRounded = this._applyRoundingWithFlag(res);
-                res = resRounded.value;
-                this._addHistoryEntry({
-                    val: this._formatResult(res),
-                    symbol: '*',
-                    key: 'TAX+',
-                    type: 'result',
-                    roundingFlag: resRounded.roundingFlag,
-                    roundingRawValue: resRounded.rawValue
-                });
+                res = this._addRoundedResultEntry(resRaw, 'TAX+');
                 
                 this.onDisplayUpdate(String(res));
                 this.currentInput = String(res);
@@ -2162,7 +2139,8 @@ class CalculatorEngine {
                 // Example: 122 with 22% tax -> 122 / 1.22 = 100
                 // @2026-03-07
                 const divisor = 1 + (this.taxRate / 100);
-                res = this._applyRounding(val / divisor);
+                const resRaw = val / divisor;
+                res = this._applyRounding(resRaw);
                 const taxAmount = this._applyRounding(val - res);
                 
                 // Entry 0: Base operand with ÷ operator
@@ -2185,16 +2163,7 @@ class CalculatorEngine {
                 });
                 
                 // Entry 2: Result with total
-                const resRounded = this._applyRoundingWithFlag(res);
-                res = resRounded.value;
-                this._addHistoryEntry({
-                    val: this._formatResult(res),
-                    symbol: '*',
-                    key: 'TAX-',
-                    type: 'result',
-                    roundingFlag: resRounded.roundingFlag,
-                    roundingRawValue: resRounded.rawValue
-                });
+                res = this._addRoundedResultEntry(resRaw, 'TAX-');
                 
                 this.onDisplayUpdate(String(res));
                 this.currentInput = String(res);
@@ -2359,6 +2328,22 @@ class CalculatorEngine {
         if (rounded > raw) roundingFlag = 'up';
         else if (rounded < raw) roundingFlag = 'down';
         return { value: rounded, roundingFlag, rawValue: raw };
+    }
+
+    _addRoundedResultEntry(rawValue, key) {
+        const resRounded = this._applyRoundingWithFlag(rawValue);
+        const result = resRounded.value;
+
+        this._addHistoryEntry({
+            val: this._formatResult(result),
+            symbol: '',
+            key,
+            type: 'result',
+            roundingFlag: resRounded.roundingFlag,
+            roundingRawValue: resRounded.rawValue
+        });
+
+        return result;
     }
 
     _formatResult(val) {
