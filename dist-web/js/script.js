@@ -45,6 +45,7 @@ const settingsRuntimeGridEl = document.getElementById("settings-runtime-grid");
 const calendarContextMenu = document.createElement("div");
 
 let fxHistory = null;
+let fxHistoryProvider = null;
 let fxChartSize = { width: 0, height: 0 };
 let fxMiniSize = { width: 0, height: 0 };
 let fxChartEntries = [];
@@ -54,6 +55,8 @@ const fxSessionKey = "fxLatestSession";
 const freeCurrencyCookieKey = "freeCurrencyApiKey";
 const gistTokenCookieKey = "githubGistToken";
 const gistUrlCookieKey = "dashboardGistUrl";
+const FX_HISTORY_FETCH_HOURS = [10, 17];
+const FX_LATEST_FETCH_HOURS = [9, 12, 14, 16, 18];
 
 const weekdayLabels = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const monthNames = [
@@ -70,6 +73,7 @@ const monthNames = [
   "Novembre",
   "Dicembre",
 ];
+const monthShortNames = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
 const weekdayNames = [
   "Domenica",
@@ -448,23 +452,37 @@ function scheduleMidnightRefresh() {
 
 function scheduleFxHistoryRefresh() {
   const now = new Date();
-  const target = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    17,
-    5,
-    0
-  );
-  if (now >= target) {
-    target.setDate(target.getDate() + 1);
-  }
+  const target = getNextScheduledTarget(FX_HISTORY_FETCH_HOURS, now);
   const timeout = target.getTime() - now.getTime();
-
   setTimeout(() => {
     fetchFxHistory();
     scheduleFxHistoryRefresh();
   }, timeout);
+}
+
+function scheduleFxLatestRefresh() {
+  const now = new Date();
+  const target = getNextScheduledTarget(FX_LATEST_FETCH_HOURS, now);
+  const timeout = target.getTime() - now.getTime();
+  setTimeout(() => {
+    fetchFxLatest({ forceRemote: true });
+    scheduleFxLatestRefresh();
+  }, timeout);
+}
+
+function isScheduledHour(hours, date = new Date()) {
+  return hours.includes(date.getHours());
+}
+
+function getNextScheduledTarget(hours, now = new Date()) {
+  const sorted = [...hours].sort((a, b) => a - b);
+  for (const hour of sorted) {
+    const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 5);
+    if (candidate.getTime() > now.getTime()) {
+      return candidate;
+    }
+  }
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, sorted[0], 0, 5);
 }
 
 /**
@@ -847,13 +865,13 @@ function setCachedSessionRate(rate) {
     rate,
     ts: Date.now(),
   };
-  setCookie(fxSessionKey, JSON.stringify(payload), 3600);
+  setCookie(fxSessionKey, JSON.stringify(payload), 60 * 60 * 24 * 7);
 }
 
 function isCacheFresh(payload) {
   if (!payload?.ts) return false;
   const ageMs = Date.now() - payload.ts;
-  return ageMs < 60 * 60 * 1000;
+  return ageMs < 72 * 60 * 60 * 1000;
 }
 
 function getBestLocalFxSnapshot() {
@@ -986,21 +1004,69 @@ function addIntradayPoint(rate) {
 // --- FX HISTORY CACHE ---
 function getHistoryRange() {
   const end = new Date();
-  const start = new Date();
-  start.setFullYear(end.getFullYear() - 1);
+  const start = new Date(end.getFullYear() - 1, 0, 1);
   return { start: formatDateLocal(start), end: formatDateLocal(end) };
+}
+
+function normalizeHistoryPayload(payload) {
+  if (Array.isArray(payload)) {
+    const normalized = {};
+    payload.forEach((row) => {
+      if (!row || row.quote !== "USD" || !row.date) return;
+      const rate = typeof row.rate === "number" ? row.rate : parseFloat(row.rate);
+      if (!Number.isFinite(rate)) return;
+      normalized[row.date] = { USD: rate };
+    });
+    return Object.keys(normalized).length ? normalized : null;
+  }
+
+  if (payload?.rates && typeof payload.rates === "object") {
+    return payload.rates;
+  }
+
+  return null;
 }
 
 function readCachedHistory() {
   const raw = localStorage.getItem("fxHistory");
   const updated = localStorage.getItem("fxHistoryUpdated");
   if (!raw || !updated) return null;
-  return { data: JSON.parse(raw), updated };
+  try {
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object") return null;
+    const provider = localStorage.getItem("fxHistoryProvider") || null;
+    return { data, updated, provider };
+  } catch (error) {
+    console.warn("Invalid fxHistory cache payload", error);
+    localStorage.removeItem("fxHistory");
+    localStorage.removeItem("fxHistoryUpdated");
+    localStorage.removeItem("fxHistoryProvider");
+    return null;
+  }
 }
 
-function cacheHistory(data) {
+function cacheHistory(data, provider = "Frankfurter") {
   localStorage.setItem("fxHistory", JSON.stringify(data));
-  localStorage.setItem("fxHistoryUpdated", formatDate(new Date()));
+  localStorage.setItem("fxHistoryUpdated", formatDateLocal(new Date()));
+  localStorage.setItem("fxHistoryProvider", provider);
+}
+
+function getLatestHistoryDate(history) {
+  if (!history || typeof history !== "object") return null;
+  const keys = Object.keys(history)
+    .filter((key) => /^\d{4}-\d{2}-\d{2}$/.test(key))
+    .sort();
+  return keys.length ? keys[keys.length - 1] : null;
+}
+
+function isHistoryRecent(history, maxAgeDays = 7) {
+  const latest = getLatestHistoryDate(history);
+  if (!latest) return false;
+  const [year, month, day] = latest.split("-").map(Number);
+  const latestTs = new Date(year, month - 1, day, 12, 0, 0).getTime();
+  if (!Number.isFinite(latestTs)) return false;
+  const ageMs = Date.now() - latestTs;
+  return ageMs <= maxAgeDays * 24 * 60 * 60 * 1000;
 }
 
 // --- FX HISTORY FETCH/DERIVED ---
@@ -1016,7 +1082,8 @@ function updateFxTrend() {
   const diff = latestRate - prevRate;
   const pct = (diff / prevRate) * 100;
   const sign = diff >= 0 ? "+" : "";
-  fxChangeEl.textContent = `Frankfurter: ${latestRate.toFixed(4)} · Δ ${sign}${diff.toFixed(
+  const providerLabel = fxHistoryProvider || 'FX';
+  fxChangeEl.textContent = `${providerLabel}: ${latestRate.toFixed(4)} · Δ ${sign}${diff.toFixed(
     4
   )} (${sign}${pct.toFixed(2)}%)`;
   fxChangeEl.classList.toggle("negative", diff < 0);
@@ -1025,18 +1092,35 @@ function updateFxTrend() {
 async function fetchFxHistory() {
   try {
     const { start, end } = getHistoryRange();
-    const url = `https://api.frankfurter.app/${start}..${end}?from=EUR&to=USD`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Errore richiesta FX history");
-    const data = await response.json();
-    fxHistory = data.rates;
-    cacheHistory(fxHistory);
+    const url = `https://api.frankfurter.dev/v2/rates?from=${start}&to=${end}&base=EUR&quotes=USD`;
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`Frankfurter v2 responded with ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const normalized = normalizeHistoryPayload(payload);
+    if (!normalized) {
+      throw new Error("Frankfurter v2 returned an unsupported payload");
+    }
+
+    if (!isHistoryRecent(normalized, 5)) {
+      throw new Error(`Frankfurter v2 returned stale history (${getLatestHistoryDate(normalized) || "n/a"})`);
+    }
+
+    fxHistory = normalized;
+    fxHistoryProvider = "Frankfurter v2";
+    cacheHistory(fxHistory, fxHistoryProvider);
     drawFxChart();
     updateFxTrend();
+    return;
   } catch (error) {
     console.error(error);
     if (fxChangeEl) {
-      fxChangeEl.textContent = "Grafico FX non disponibile";
+      const latestCached = getLatestHistoryDate(fxHistory);
+      fxChangeEl.textContent = latestCached
+        ? `Storico non aggiornato (ultimo dato ${latestCached})`
+        : "Grafico FX non disponibile";
       fxChangeEl.classList.add("negative");
     }
   }
@@ -1044,12 +1128,14 @@ async function fetchFxHistory() {
 
 function ensureFxHistory() {
   const cached = readCachedHistory();
-  const todayKey = formatDate(new Date());
+  const now = new Date();
+  const todayKey = formatDateLocal(now);
   if (cached) {
     fxHistory = cached.data;
+    fxHistoryProvider = cached.provider;
     drawFxChart();
     updateFxTrend();
-    if (cached.updated !== todayKey) {
+    if (cached.updated !== todayKey || !isHistoryRecent(cached.data) || isScheduledHour(FX_HISTORY_FETCH_HOURS, now)) {
       fetchFxHistory();
     }
   } else {
@@ -1058,9 +1144,31 @@ function ensureFxHistory() {
 }
 
 // --- FX LATEST FETCH ---
-async function fetchFxLatest() {
+function shouldFetchFxLatestRemote(now, localSnapshot, forceRemote) {
+  if (forceRemote) return true;
+  if (!localSnapshot) return true;
+  return isScheduledHour(FX_LATEST_FETCH_HOURS, now);
+}
+
+async function fetchFreeCurrencyRate(apiKey) {
+  if (!apiKey) return null;
+  const url = `https://api.freecurrencyapi.com/v1/latest?apikey=${encodeURIComponent(
+    apiKey
+  )}&base_currency=EUR&currencies=USD`;
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) {
+    console.warn("FreeCurrencyAPI responded", response.status);
+    return null;
+  }
+  const payload = await response.json();
+  const rate = extractRateFromPayload(payload);
+  return Number.isFinite(rate) ? rate : null;
+}
+
+async function fetchFxLatest({ forceRemote = false } = {}) {
   if (!fxPriceEl || !fxChangeEl || !fxUpdatedEl) return;
   try {
+    const now = new Date();
     const localSnapshot = getBestLocalFxSnapshot();
     updateNetworkStatus(localSnapshot?.ts || null);
 
@@ -1073,37 +1181,26 @@ async function fetchFxLatest() {
 
     if (fxStatusEl) fxStatusEl.classList.remove("cached");
 
-    // Check local session cache (1 hour duration)
+    const shouldFetchRemote = shouldFetchFxLatestRemote(now, localSnapshot, forceRemote);
+    if (!shouldFetchRemote) {
+      applyFxSnapshot(localSnapshot, true);
+      return;
+    }
+
     const cached = getCachedSessionRate();
-    if (cached && isCacheFresh(cached)) {
+    if (!forceRemote && cached && isCacheFresh(cached) && !isScheduledHour(FX_LATEST_FETCH_HOURS, now)) {
       applyFxSnapshot({ rate: cached.rate, ts: cached.ts }, true);
       return;
     }
-    // Prefer FreeCurrencyAPI (key inserita dall'utente in questa sessione)
-    let rate = null;
+
     try {
       const freeKey = getFreeCurrencyCookieKey();
-      if (freeKey) {
-        const url = `https://api.freecurrencyapi.com/v1/latest?apikey=${encodeURIComponent(
-          freeKey
-        )}&base_currency=EUR&currencies=USD`;
-        try {
-          const resp = await fetch(url);
-          if (resp.ok) {
-            const payload = await resp.json();
-            rate = extractRateFromPayload(payload);
-          } else {
-            console.warn('FreeCurrencyAPI responded', resp.status);
-          }
-        } catch (err) {
-          console.warn('FreeCurrencyAPI fetch failed', err);
-        }
-      }
+      const rate = await fetchFreeCurrencyRate(freeKey);
 
       if (!rate || isNaN(rate)) {
-        console.warn('No rate retrieved from FreeCurrencyAPI');
+        console.warn("No rate retrieved from FreeCurrencyAPI");
         applyFxSnapshot(localSnapshot, true);
-        return; // nothing to show
+        return;
       }
 
       setCachedSessionRate(rate);
@@ -1175,18 +1272,40 @@ function drawFxChart() {
     .filter((entry) => Number.isFinite(entry.rate))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  fxChartEntries = entries;
-
   if (!entries.length) return;
 
-  const rates = entries.map((entry) => entry.rate);
-  const min = Math.min(...rates);
-  const max = Math.max(...rates);
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const previousYear = currentYear - 1;
+
+  const createYearMonthlySeries = (year) => {
+    const buckets = Array.from({ length: 12 }, () => []);
+    entries.forEach((entry) => {
+      const [entryYear, entryMonth] = entry.date.split("-").map(Number);
+      if (entryYear !== year) return;
+      const monthIndex = entryMonth - 1;
+      if (monthIndex < 0 || monthIndex > 11) return;
+      buckets[monthIndex].push(entry.rate);
+    });
+    return buckets.map((monthRates) => {
+      if (!monthRates.length) return null;
+      const sum = monthRates.reduce((acc, value) => acc + value, 0);
+      return sum / monthRates.length;
+    });
+  };
+
+  const currentSeries = createYearMonthlySeries(currentYear);
+  const previousSeries = createYearMonthlySeries(previousYear);
+  const allRates = [...currentSeries, ...previousSeries].filter((value) => Number.isFinite(value));
+  if (!allRates.length) return;
+
+  const min = Math.min(...allRates);
+  const max = Math.max(...allRates);
   const padding = 22 * ratio;
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
 
-  const scaleX = chartWidth / (entries.length - 1);
+  const scaleX = chartWidth / 11;
   const scaleY = chartHeight / (max - min || 1);
 
   const gridSteps = 6;
@@ -1207,24 +1326,45 @@ function drawFxChart() {
     ctx.stroke();
   }
 
-  ctx.strokeStyle = colors.line;
-  ctx.lineWidth = 2 * ratio;
-  ctx.beginPath();
-  entries.forEach((entry, index) => {
-    const x = padding + index * scaleX;
-    const y = height - padding - (entry.rate - min) * scaleY;
-    if (index === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  });
-  ctx.stroke();
+  const drawSeries = (series, strokeStyle, dashed = false) => {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 2 * ratio;
+    ctx.setLineDash(dashed ? [5 * ratio, 5 * ratio] : []);
+    ctx.beginPath();
+    let started = false;
+    series.forEach((rate, index) => {
+      if (!Number.isFinite(rate)) {
+        started = false;
+        return;
+      }
+      const x = padding + index * scaleX;
+      const y = height - padding - (rate - min) * scaleY;
+      if (!started) {
+        ctx.moveTo(x, y);
+        started = true;
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
 
-  if (fxHoverIndex !== null && entries[fxHoverIndex]) {
-    const entry = entries[fxHoverIndex];
+  drawSeries(previousSeries, isLight ? "rgba(64, 110, 150, 0.55)" : "rgba(122, 166, 194, 0.45)", true);
+  drawSeries(currentSeries, colors.line, false);
+
+  fxChartEntries = monthShortNames.map((label, index) => ({
+    date: `${currentYear}-${String(index + 1).padStart(2, "0")}`,
+    label,
+    rate: currentSeries[index],
+    previousRate: previousSeries[index],
+  }));
+
+  if (fxHoverIndex !== null && fxChartEntries[fxHoverIndex]) {
+    const entry = fxChartEntries[fxHoverIndex];
     const x = padding + fxHoverIndex * scaleX;
-    const y = height - padding - (entry.rate - min) * scaleY;
+    const currentRate = entry.rate;
+    const previousRate = entry.previousRate;
 
     ctx.strokeStyle = colors.hoverLine;
     ctx.lineWidth = 1 * ratio;
@@ -1233,12 +1373,24 @@ function drawFxChart() {
     ctx.lineTo(x, height - padding);
     ctx.stroke();
 
-    ctx.fillStyle = colors.indicator;
-    ctx.beginPath();
-    ctx.arc(x, y, 3.5 * ratio, 0, Math.PI * 2);
-    ctx.fill();
+    if (Number.isFinite(previousRate)) {
+      const prevY = height - padding - (previousRate - min) * scaleY;
+      ctx.fillStyle = isLight ? "#3f6b91" : "#8ba8bf";
+      ctx.beginPath();
+      ctx.arc(x, prevY, 3 * ratio, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (Number.isFinite(currentRate)) {
+      const currentY = height - padding - (currentRate - min) * scaleY;
+      ctx.fillStyle = colors.indicator;
+      ctx.beginPath();
+      ctx.arc(x, currentY, 3.5 * ratio, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-    const tooltipText = `${entry.date}  ·  ${entry.rate.toFixed(4)}`;
+    const currentText = Number.isFinite(currentRate) ? currentRate.toFixed(4) : "n/d";
+    const previousText = Number.isFinite(previousRate) ? previousRate.toFixed(4) : "n/d";
+    const tooltipText = `${entry.label} · ${previousYear} ${previousText} · ${currentYear} ${currentText}`;
     ctx.font = `${11 * ratio}px "Droid Sans Mono", monospace`;
     const textWidth = ctx.measureText(tooltipText).width;
     const padX = 8 * ratio;
@@ -1248,7 +1400,11 @@ function drawFxChart() {
 
     let boxX = x - boxWidth / 2;
     boxX = Math.max(padding, Math.min(boxX, width - padding - boxWidth));
-    const boxY = Math.max(padding, y - boxHeight - 10 * ratio);
+    const anchorRate = Number.isFinite(currentRate) ? currentRate : previousRate;
+    const anchorY = Number.isFinite(anchorRate)
+      ? height - padding - (anchorRate - min) * scaleY
+      : height - padding;
+    const boxY = Math.max(padding, anchorY - boxHeight - 10 * ratio);
 
     ctx.fillStyle = colors.tooltipBg;
     ctx.strokeStyle = colors.tooltipBorder;
@@ -1264,7 +1420,8 @@ function drawFxChart() {
     ctx.fillText(tooltipText, boxX + boxWidth / 2, boxY + boxHeight / 2 + 0.5 * ratio);
   }
 
-  const avg = rates.reduce((sum, value) => sum + value, 0) / rates.length;
+  const currentValidRates = currentSeries.filter((value) => Number.isFinite(value));
+  const avg = currentValidRates.reduce((sum, value) => sum + value, 0) / Math.max(currentValidRates.length, 1);
   const avgY = height - padding - (avg - min) * scaleY;
   ctx.setLineDash([6 * ratio, 6 * ratio]);
   ctx.strokeStyle = colors.avgLine;
@@ -1275,15 +1432,15 @@ function drawFxChart() {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  const now = new Date();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - 6);
   const monthStart = new Date(now);
   monthStart.setMonth(now.getMonth() - 1);
   const weekStartKey = formatDateLocal(weekStart);
   const monthStartKey = formatDateLocal(monthStart);
-  const weekEntries = entries.filter((entry) => entry.date >= weekStartKey);
-  const monthEntries = entries.filter((entry) => entry.date >= monthStartKey);
+  const currentYearEntries = entries.filter((entry) => entry.date.startsWith(`${currentYear}-`));
+  const weekEntries = currentYearEntries.filter((entry) => entry.date >= weekStartKey);
+  const monthEntries = currentYearEntries.filter((entry) => entry.date >= monthStartKey);
   const weekAvg =
     weekEntries.reduce((sum, entry) => sum + entry.rate, 0) / Math.max(weekEntries.length, 1);
   const monthAvg =
@@ -1300,7 +1457,7 @@ function drawFxChart() {
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillText(
-    `Medie: 7gg ${weekAvg.toFixed(4)} · 30gg ${monthAvg.toFixed(4)} · periodo ${avg.toFixed(4)}`,
+    `YoY ${previousYear}/${currentYear} · Medie: 7gg ${weekAvg.toFixed(4)} · 30gg ${monthAvg.toFixed(4)} · anno ${avg.toFixed(4)}`,
     padding,
     Math.max(2 * ratio, padding - 14 * ratio)
   );
@@ -1402,41 +1559,6 @@ function drawFxMiniChart() {
 }
 
 // --- FX SCHEDULING ---
-function scheduleIntradayRefresh() {
-  const now = new Date();
-  const startHour = 7;
-  const endHour = 18;
-  const currentHour = now.getHours();
-
-  let next;
-  if (currentHour < startHour) {
-    next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 5, 0);
-  } else if (currentHour >= endHour) {
-    next = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() + 1,
-      startHour,
-      5,
-      0
-    );
-  } else {
-    next = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      currentHour + 1,
-      5,
-      0
-    );
-  }
-
-  const timeout = next.getTime() - now.getTime();
-  setTimeout(() => {
-    fetchFxLatest();
-    scheduleIntradayRefresh();
-  }, timeout);
-}
 
 async function openExternalLink(url) {
   if (!url || !/^https?:\/\//i.test(url)) {
@@ -1500,7 +1622,7 @@ function initDashboard() {
   scheduleMinuteRefresh();
   ensureFxHistory();
   fetchFxLatest();
-  scheduleIntradayRefresh();
+  scheduleFxLatestRefresh();
   scheduleFxHistoryRefresh();
   resizeFxChart();
   resizeFxMiniChart();
