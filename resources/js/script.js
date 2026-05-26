@@ -15,20 +15,15 @@ const analogClock = document.getElementById("analog-clock");
 const hourHand = analogClock?.querySelector(".hand.hour");
 const minuteHand = analogClock?.querySelector(".hand.minute");
 const fxPriceEl = document.getElementById("fx-price");
-const fxChangeEl = document.getElementById("fx-change");
 const fxUpdatedEl = document.getElementById("fx-updated");
+const fxAvg7El = document.getElementById("fx-avg-7");
+const fxAvg30El = document.getElementById("fx-avg-30");
+const fxAvgYtdEl = document.getElementById("fx-avg-ytd");
+const fxWeeklyMinEl = document.getElementById("fx-weekly-min");
+const fxWeeklyMaxEl = document.getElementById("fx-weekly-max");
 const fxChartEl = document.getElementById("fx-chart");
-const fxMiniChartEl = document.getElementById("fx-mini-chart");
 const fxStatusEl = document.getElementById("fx-status");
-const fxCardEl = document.querySelector(".fx-card");
-const fxKeyForm = document.getElementById("fx-key-form");
-const fxKeyInput = document.getElementById("freecurrency-key");
-const fxKeyStatus = document.getElementById("fx-key-status");
-const fxIndicator = document.getElementById("fx-api-status");
 const networkStatusEl = document.getElementById("network-status");
-const fxKeyClearBtn = document.getElementById("clear-freecurrency-key");
-const fxKeyToggleBtn = document.getElementById("toggle-freecurrency-key");
-const fxKeyCopyBtn = document.getElementById("copy-freecurrency-key");
 const gistKeyForm = document.getElementById("gist-key-form");
 const gistKeyInput = document.getElementById("gist-token");
 const gistKeyStatus = document.getElementById("gist-key-status");
@@ -47,16 +42,13 @@ const calendarContextMenu = document.createElement("div");
 let fxHistory = null;
 let fxHistoryProvider = null;
 let fxChartSize = { width: 0, height: 0 };
-let fxMiniSize = { width: 0, height: 0 };
 let fxChartEntries = [];
 let fxHoverIndex = null;
 let gistToken = null;
 const fxSessionKey = "fxLatestSession";
-const freeCurrencyCookieKey = "freeCurrencyApiKey";
 const gistTokenCookieKey = "githubGistToken";
 const gistUrlCookieKey = "dashboardGistUrl";
-const FX_HISTORY_FETCH_HOURS = [10, 17];
-const FX_LATEST_FETCH_HOURS = [9, 12, 14, 16, 18];
+const FX_DAILY_FETCH_HOURS = [16];
 
 const weekdayLabels = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const monthNames = [
@@ -450,28 +442,14 @@ function scheduleMidnightRefresh() {
   }, timeout);
 }
 
-function scheduleFxHistoryRefresh() {
+function scheduleFxDailyRefresh() {
   const now = new Date();
-  const target = getNextScheduledTarget(FX_HISTORY_FETCH_HOURS, now);
+  const target = getNextScheduledTarget(FX_DAILY_FETCH_HOURS, now);
   const timeout = target.getTime() - now.getTime();
-  setTimeout(() => {
-    fetchFxHistory();
-    scheduleFxHistoryRefresh();
+  setTimeout(async () => {
+    await runDailyFxRefresh();
+    scheduleFxDailyRefresh();
   }, timeout);
-}
-
-function scheduleFxLatestRefresh() {
-  const now = new Date();
-  const target = getNextScheduledTarget(FX_LATEST_FETCH_HOURS, now);
-  const timeout = target.getTime() - now.getTime();
-  setTimeout(() => {
-    fetchFxLatest({ forceRemote: true });
-    scheduleFxLatestRefresh();
-  }, timeout);
-}
-
-function isScheduledHour(hours, date = new Date()) {
-  return hours.includes(date.getHours());
 }
 
 function getNextScheduledTarget(hours, now = new Date()) {
@@ -623,33 +601,8 @@ function formatElapsedCompact(fromTimestamp) {
   return `${hours}h ${minutes}m`;
 }
 
-// --- FX HELPERS / API KEYS ---
+// --- FX HELPERS ---
 // --- FX CACHE (SESSION) ---
-
-function getFreeCurrencyCookieKey() {
-  const persistedKey = getCookie(freeCurrencyCookieKey);
-  if (persistedKey) return persistedKey.trim();
-
-  const sessionKey = sessionStorage.getItem(freeCurrencyCookieKey);
-  if (!sessionKey) return null;
-
-  const trimmedSessionKey = sessionKey.trim();
-  const oneYear = 60 * 60 * 24 * 365;
-  setCookie(freeCurrencyCookieKey, trimmedSessionKey, oneYear);
-  sessionStorage.removeItem(freeCurrencyCookieKey);
-  return trimmedSessionKey;
-}
-
-function setFreeCurrencyCookieKey(key) {
-  if (!key) return;
-  const oneYear = 60 * 60 * 24 * 365;
-  setCookie(freeCurrencyCookieKey, key, oneYear);
-}
-
-function clearFreeCurrencyCookieKey() {
-  deleteCookie(freeCurrencyCookieKey);
-  sessionStorage.removeItem(freeCurrencyCookieKey);
-}
 
 function maskApiKey(key) {
   if (!key) return "";
@@ -779,21 +732,6 @@ async function updateSettingsRuntimeInfo() {
   }
 }
 
-function updateFxKeyStatus() {
-  const stored = getFreeCurrencyCookieKey();
-  syncSensitiveInputValue(fxKeyInput, stored);
-  if (fxKeyStatus) {
-    if (stored) {
-      fxKeyStatus.textContent = `Chiave salvata (${maskApiKey(stored)}).`;
-    } else {
-      fxKeyStatus.textContent = "Nessuna chiave salvata.";
-    }
-  }
-  if (fxIndicator) {
-    fxIndicator.classList.toggle("active", !!stored);
-  }
-}
-
 // --- GITHUB GIST TOKEN ---
 function getGistCookieKey() {
   const key = getCookie(gistTokenCookieKey);
@@ -854,39 +792,36 @@ function getCachedSessionRate() {
   const raw = getCookie(fxSessionKey);
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    const rate = Number(parsed?.rate);
+    const ts = Number(parsed?.ts);
+    if (!Number.isFinite(rate) || !Number.isFinite(ts)) {
+      return null;
+    }
+    const valueDate = typeof parsed?.valueDate === "string" ? parsed.valueDate : formatDateLocal(new Date(ts));
+    return { rate, ts, valueDate };
   } catch {
     return null;
   }
 }
 
-function setCachedSessionRate(rate) {
+function setCachedSessionRate(snapshot) {
+  if (!snapshot || !Number.isFinite(snapshot.rate)) return;
   const payload = {
-    rate,
-    ts: Date.now(),
+    rate: snapshot.rate,
+    ts: Number.isFinite(snapshot.ts) ? snapshot.ts : Date.now(),
+    valueDate:
+      typeof snapshot.valueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(snapshot.valueDate)
+        ? snapshot.valueDate
+        : formatDateLocal(new Date()),
   };
   setCookie(fxSessionKey, JSON.stringify(payload), 60 * 60 * 24 * 7);
 }
 
-function isCacheFresh(payload) {
-  if (!payload?.ts) return false;
-  const ageMs = Date.now() - payload.ts;
-  return ageMs < 72 * 60 * 60 * 1000;
-}
-
 function getBestLocalFxSnapshot() {
   const cached = getCachedSessionRate();
-  if (cached && Number.isFinite(cached.rate) && Number.isFinite(cached.ts)) {
-    return { rate: cached.rate, ts: cached.ts };
-  }
-
-  const intraday = getIntradayCache();
-  if (!intraday?.points?.length) return null;
-  const lastPoint = intraday.points[intraday.points.length - 1];
-  if (!lastPoint || !Number.isFinite(lastPoint.r)) return null;
-  const ts = new Date(lastPoint.t).getTime();
-  if (!Number.isFinite(ts)) return null;
-  return { rate: lastPoint.r, ts };
+  if (!cached) return null;
+  return cached;
 }
 
 function updateNetworkStatus(lastDataTimestamp = null) {
@@ -912,99 +847,31 @@ function updateNetworkStatus(lastDataTimestamp = null) {
 function applyFxSnapshot(snapshot, stale = false) {
   if (!snapshot || !Number.isFinite(snapshot.rate)) return false;
   const when = Number.isFinite(snapshot.ts) ? new Date(snapshot.ts) : new Date();
+  const valueDate =
+    typeof snapshot.valueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(snapshot.valueDate)
+      ? snapshot.valueDate
+      : formatDateLocal(when);
   fxPriceEl.textContent = snapshot.rate.toFixed(4);
 
   const staleSuffix = stale
     ? ` · dati vecchi ${formatElapsedCompact(when.getTime()) || ""}`.trimEnd()
     : "";
-  fxUpdatedEl.textContent = `Aggiornamento: ${formatDate(when)} ${formatTime(when)}${staleSuffix}`;
+  fxUpdatedEl.textContent = `Quotazione del ${valueDate} · sync ${formatTime(when)}${staleSuffix}`;
 
   if (fxStatusEl) {
     fxStatusEl.classList.toggle("cached", stale);
   }
-  addIntradayPoint(snapshot.rate);
   updateNetworkStatus(when.getTime());
+  renderFxAverages(snapshot);
   return true;
 }
 
-// --- FX API KEY (SESSIONE UTENTE) ---
-
-// --- FX PAYLOAD PARSING ---
-// Extract a numeric USD rate from multiple provider payload shapes
-function extractRateFromPayload(payload) {
-  if (!payload) return null;
-  // FreeCurrencyAPI v1: { data: { USD: 1.123 } }
-  if (payload.data && typeof payload.data.USD !== 'undefined') return parseFloat(payload.data.USD);
-  // FreeCurrencyAPI newer shape: { data: { USD: { value: 1.123 } } }
-  if (payload.data && payload.data.USD && typeof payload.data.USD === 'object') {
-    const usdObj = payload.data.USD;
-    if (typeof usdObj.value !== 'undefined') return parseFloat(usdObj.value);
-    if (typeof usdObj.rate !== 'undefined') return parseFloat(usdObj.rate);
-    if (typeof usdObj.amount !== 'undefined') return parseFloat(usdObj.amount);
-  }
-  // If FreeCurrencyAPI returned a full `data` map (base may be USD by default),
-  // compute EUR->USD as USD / EUR when both present.
-  if (payload.data && typeof payload.data.USD !== 'undefined' && typeof payload.data.EUR !== 'undefined') {
-    const usd = parseFloat(payload.data.USD);
-    const eur = parseFloat(payload.data.EUR);
-    if (!isNaN(usd) && !isNaN(eur) && eur !== 0) return usd / eur;
-  }
-  // exchange-rate style: { rates: { USD: 1.123 } }
-  if (payload.rates && typeof payload.rates.USD !== 'undefined') return parseFloat(payload.rates.USD);
-  // alternate nesting: { data: { rates: { USD: 1.123 } } }
-  if (payload.data && payload.data.rates && typeof payload.data.rates.USD !== 'undefined') return parseFloat(payload.data.rates.USD);
-  if (payload['Realtime Currency Exchange Rate'] && payload['Realtime Currency Exchange Rate']['5. Exchange Rate']) {
-    return parseFloat(payload['Realtime Currency Exchange Rate']['5. Exchange Rate']);
-  }
-  // Some APIs return nested `result` or similar structures
-  if (payload.result && payload.result.rates && typeof payload.result.rates.USD !== 'undefined') return parseFloat(payload.result.rates.USD);
-  if (payload.result && typeof payload.result.USD !== 'undefined') return parseFloat(payload.result.USD);
-  // Direct USD field
-  if (typeof payload.USD !== 'undefined') return parseFloat(payload.USD);
-  return null;
-}
-
-// --- FX INTRADAY CACHE ---
-function getIntradayCache() {
-  const raw = localStorage.getItem("fxIntraday");
-  if (!raw) return { date: formatDate(new Date()), points: [] };
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { date: formatDate(new Date()), points: [] };
-  }
-}
-
-function setIntradayCache(cache) {
-  localStorage.setItem("fxIntraday", JSON.stringify(cache));
-}
-
-function addIntradayPoint(rate) {
-  if (!rate) return;
-  const now = new Date();
-  const todayKey = formatDate(now);
-  const cache = getIntradayCache();
-  if (cache.date !== todayKey) {
-    cache.date = todayKey;
-    cache.points = [];
-  }
-  const hourKey = `${todayKey}T${String(now.getHours()).padStart(2, "0")}:00`;
-  const existing = cache.points.findIndex((p) => p.t === hourKey);
-  const point = { t: hourKey, r: rate };
-  if (existing >= 0) {
-    cache.points[existing] = point;
-  } else {
-    cache.points.push(point);
-  }
-  cache.points = cache.points.slice(-24);
-  setIntradayCache(cache);
-  drawFxMiniChart();
-}
-
 // --- FX HISTORY CACHE ---
-function getHistoryRange() {
-  const end = new Date();
-  const start = new Date(end.getFullYear() - 1, 0, 1);
+function getHistoryRange(now = new Date()) {
+  const end = new Date(now);
+  const start = new Date(now);
+  start.setFullYear(now.getFullYear() - 1);
+  start.setHours(0, 0, 0, 0);
   return { start: formatDateLocal(start), end: formatDateLocal(end) };
 }
 
@@ -1059,34 +926,65 @@ function getLatestHistoryDate(history) {
   return keys.length ? keys[keys.length - 1] : null;
 }
 
-function isHistoryRecent(history, maxAgeDays = 7) {
-  const latest = getLatestHistoryDate(history);
-  if (!latest) return false;
-  const [year, month, day] = latest.split("-").map(Number);
-  const latestTs = new Date(year, month - 1, day, 12, 0, 0).getTime();
-  if (!Number.isFinite(latestTs)) return false;
-  const ageMs = Date.now() - latestTs;
-  return ageMs <= maxAgeDays * 24 * 60 * 60 * 1000;
+function getFxHistoryEntries(history) {
+  if (!history || typeof history !== "object") return [];
+  return Object.entries(history)
+    .map(([date, value]) => {
+      const raw = value?.USD;
+      const rate = typeof raw === "number" ? raw : parseFloat(raw);
+      return { date, rate };
+    })
+    .filter((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry.date) && Number.isFinite(entry.rate))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// --- FX HISTORY FETCH/DERIVED ---
-function updateFxTrend() {
-  if (!fxChangeEl || !fxHistory) return;
-  const sortedDates = Object.keys(fxHistory).sort();
-  if (sortedDates.length < 2) return;
-  const latestDate = sortedDates[sortedDates.length - 1];
-  const prevDate = sortedDates[sortedDates.length - 2];
-  const latestRate = fxHistory[latestDate]?.USD;
-  const prevRate = fxHistory[prevDate]?.USD;
-  if (!latestRate || !prevRate) return;
-  const diff = latestRate - prevRate;
-  const pct = (diff / prevRate) * 100;
-  const sign = diff >= 0 ? "+" : "";
-  const providerLabel = fxHistoryProvider || 'FX';
-  fxChangeEl.textContent = `${providerLabel}: ${latestRate.toFixed(4)} · Δ ${sign}${diff.toFixed(
-    4
-  )} (${sign}${pct.toFixed(2)}%)`;
-  fxChangeEl.classList.toggle("negative", diff < 0);
+function mergeSnapshotWithHistoryEntries(entries, snapshot) {
+  if (!snapshot || !Number.isFinite(snapshot.rate) || typeof snapshot.valueDate !== "string") {
+    return entries;
+  }
+  const merged = entries.filter((entry) => entry.date !== snapshot.valueDate);
+  merged.push({ date: snapshot.valueDate, rate: snapshot.rate });
+  return merged.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function calculateAverage(entries, startKey, endKey) {
+  const inRange = entries.filter((entry) => entry.date >= startKey && entry.date <= endKey);
+  if (!inRange.length) return null;
+  const total = inRange.reduce((sum, entry) => sum + entry.rate, 0);
+  return total / inRange.length;
+}
+
+function setAverageText(targetEl, value) {
+  if (!targetEl) return;
+  targetEl.textContent = Number.isFinite(value) ? value.toFixed(4) : "--";
+}
+
+function renderFxAverages(snapshot = null) {
+  const now = new Date();
+  const todayKey = formatDateLocal(now);
+  const entries = mergeSnapshotWithHistoryEntries(getFxHistoryEntries(fxHistory), snapshot || getBestLocalFxSnapshot());
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(now.getDate() - 6);
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 29);
+  const yearStart = new Date(now.getFullYear(), 0, 1);
+
+  setAverageText(fxAvg7El, calculateAverage(entries, formatDateLocal(sevenDaysAgo), todayKey));
+  setAverageText(fxAvg30El, calculateAverage(entries, formatDateLocal(thirtyDaysAgo), todayKey));
+  setAverageText(fxAvgYtdEl, calculateAverage(entries, formatDateLocal(yearStart), todayKey));
+}
+
+function updateWeeklyRangeSummary(points) {
+  const values = points
+    .map((point) => point.rate)
+    .filter((rate) => Number.isFinite(rate));
+  if (!values.length) {
+    if (fxWeeklyMinEl) fxWeeklyMinEl.textContent = "Min --";
+    if (fxWeeklyMaxEl) fxWeeklyMaxEl.textContent = "Max --";
+    return;
+  }
+  if (fxWeeklyMinEl) fxWeeklyMinEl.textContent = `Min ${Math.min(...values).toFixed(4)}`;
+  if (fxWeeklyMaxEl) fxWeeklyMaxEl.textContent = `Max ${Math.max(...values).toFixed(4)}`;
 }
 
 async function fetchFxHistory() {
@@ -1104,71 +1002,58 @@ async function fetchFxHistory() {
       throw new Error("Frankfurter v2 returned an unsupported payload");
     }
 
-    if (!isHistoryRecent(normalized, 5)) {
-      throw new Error(`Frankfurter v2 returned stale history (${getLatestHistoryDate(normalized) || "n/a"})`);
-    }
-
     fxHistory = normalized;
     fxHistoryProvider = "Frankfurter v2";
     cacheHistory(fxHistory, fxHistoryProvider);
     drawFxChart();
-    updateFxTrend();
+    renderFxAverages();
     return;
   } catch (error) {
     console.error(error);
-    if (fxChangeEl) {
+    if (fxUpdatedEl) {
       const latestCached = getLatestHistoryDate(fxHistory);
-      fxChangeEl.textContent = latestCached
+      fxUpdatedEl.textContent = latestCached
         ? `Storico non aggiornato (ultimo dato ${latestCached})`
-        : "Grafico FX non disponibile";
-      fxChangeEl.classList.add("negative");
+        : "Storico FX non disponibile";
     }
   }
 }
 
 function ensureFxHistory() {
   const cached = readCachedHistory();
-  const now = new Date();
-  const todayKey = formatDateLocal(now);
   if (cached) {
     fxHistory = cached.data;
     fxHistoryProvider = cached.provider;
     drawFxChart();
-    updateFxTrend();
-    if (cached.updated !== todayKey || !isHistoryRecent(cached.data) || isScheduledHour(FX_HISTORY_FETCH_HOURS, now)) {
-      fetchFxHistory();
-    }
+    renderFxAverages();
   } else {
-    fetchFxHistory();
+    drawFxChart();
   }
 }
 
 // --- FX LATEST FETCH ---
-function shouldFetchFxLatestRemote(now, localSnapshot, forceRemote) {
-  if (forceRemote) return true;
-  if (!localSnapshot) return true;
-  return isScheduledHour(FX_LATEST_FETCH_HOURS, now);
-}
-
-async function fetchFreeCurrencyRate(apiKey) {
-  if (!apiKey) return null;
-  const url = `https://api.freecurrencyapi.com/v1/latest?apikey=${encodeURIComponent(
-    apiKey
-  )}&base_currency=EUR&currencies=USD`;
+async function fetchFrankfurterLatestRate() {
+  const url = "https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD";
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
-    console.warn("FreeCurrencyAPI responded", response.status);
-    return null;
+    throw new Error(`Frankfurter v1 responded with ${response.status}`);
   }
   const payload = await response.json();
-  const rate = extractRateFromPayload(payload);
-  return Number.isFinite(rate) ? rate : null;
+  const rawRate = payload?.rates?.USD;
+  const rate = typeof rawRate === "number" ? rawRate : parseFloat(rawRate);
+  if (!Number.isFinite(rate)) {
+    throw new Error("Frankfurter v1 returned an unsupported payload");
+  }
+  const valueDate =
+    typeof payload?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(payload.date)
+      ? payload.date
+      : formatDateLocal(new Date());
+  return { rate, valueDate };
 }
 
 async function fetchFxLatest({ forceRemote = false } = {}) {
-  if (!fxPriceEl || !fxChangeEl || !fxUpdatedEl) return;
+  if (!fxPriceEl || !fxUpdatedEl) return;
   try {
-    const now = new Date();
     const localSnapshot = getBestLocalFxSnapshot();
     updateNetworkStatus(localSnapshot?.ts || null);
 
@@ -1179,32 +1064,16 @@ async function fetchFxLatest({ forceRemote = false } = {}) {
       return;
     }
 
-    if (fxStatusEl) fxStatusEl.classList.remove("cached");
-
-    const shouldFetchRemote = shouldFetchFxLatestRemote(now, localSnapshot, forceRemote);
-    if (!shouldFetchRemote) {
+    if (!forceRemote && localSnapshot) {
       applyFxSnapshot(localSnapshot, true);
       return;
     }
 
-    const cached = getCachedSessionRate();
-    if (!forceRemote && cached && isCacheFresh(cached) && !isScheduledHour(FX_LATEST_FETCH_HOURS, now)) {
-      applyFxSnapshot({ rate: cached.rate, ts: cached.ts }, true);
-      return;
-    }
-
     try {
-      const freeKey = getFreeCurrencyCookieKey();
-      const rate = await fetchFreeCurrencyRate(freeKey);
-
-      if (!rate || isNaN(rate)) {
-        console.warn("No rate retrieved from FreeCurrencyAPI");
-        applyFxSnapshot(localSnapshot, true);
-        return;
-      }
-
-      setCachedSessionRate(rate);
-      applyFxSnapshot({ rate, ts: Date.now() }, false);
+      const latest = await fetchFrankfurterLatestRate();
+      const snapshot = { rate: latest.rate, ts: Date.now(), valueDate: latest.valueDate };
+      setCachedSessionRate(snapshot);
+      applyFxSnapshot(snapshot, false);
     } catch (err) {
       console.error(err);
       applyFxSnapshot(localSnapshot, true);
@@ -1214,6 +1083,11 @@ async function fetchFxLatest({ forceRemote = false } = {}) {
     const localSnapshot = getBestLocalFxSnapshot();
     applyFxSnapshot(localSnapshot, true);
   }
+}
+
+async function runDailyFxRefresh() {
+  await fetchFxLatest({ forceRemote: true });
+  await fetchFxHistory();
 }
 
 // --- FX CHART (ANNUAL) ---
@@ -1242,11 +1116,8 @@ function drawFxChart() {
   const ctx = fxChartEl.getContext("2d");
   if (!ctx) return;
 
-  // Determine if current theme is light or dark
   const currentTheme = getTheme();
   const isLight = currentTheme === 'light' || currentTheme === 'mac1990';
-
-  // Define colors based on theme type
   const colors = {
     grid: isLight ? 'rgba(0, 50, 100, 0.08)' : 'rgba(122, 166, 194, 0.12)',
     line: isLight ? '#3a7db8' : '#7aa6c2',
@@ -1255,7 +1126,6 @@ function drawFxChart() {
     tooltipBg: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(16, 25, 32, 0.9)',
     tooltipBorder: isLight ? 'rgba(58, 125, 184, 0.4)' : 'rgba(122, 166, 194, 0.6)',
     tooltipText: isLight ? '#1a3050' : '#e7f0f6',
-    avgLine: isLight ? 'rgba(78, 138, 114, 0.6)' : 'rgba(155, 179, 168, 0.75)'
   };
 
   const ratio = window.devicePixelRatio || 1;
@@ -1263,49 +1133,19 @@ function drawFxChart() {
   const height = fxChartEl.height;
   ctx.clearRect(0, 0, width, height);
 
-  const entries = Object.entries(fxHistory)
-    .map(([date, value]) => {
-      const raw = value?.USD;
-      const rate = typeof raw === "number" ? raw : parseFloat(raw);
-      return { date, rate };
-    })
-    .filter((entry) => Number.isFinite(entry.rate))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const entries = mergeSnapshotWithHistoryEntries(getFxHistoryEntries(fxHistory), getBestLocalFxSnapshot());
+  const points = buildWeeklyFxSeries(entries);
+  const values = points.map((point) => point.rate).filter((rate) => Number.isFinite(rate));
+  updateWeeklyRangeSummary(points);
+  if (!values.length) return;
 
-  if (!entries.length) return;
-
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const previousYear = currentYear - 1;
-
-  const createYearMonthlySeries = (year) => {
-    const buckets = Array.from({ length: 12 }, () => []);
-    entries.forEach((entry) => {
-      const [entryYear, entryMonth] = entry.date.split("-").map(Number);
-      if (entryYear !== year) return;
-      const monthIndex = entryMonth - 1;
-      if (monthIndex < 0 || monthIndex > 11) return;
-      buckets[monthIndex].push(entry.rate);
-    });
-    return buckets.map((monthRates) => {
-      if (!monthRates.length) return null;
-      const sum = monthRates.reduce((acc, value) => acc + value, 0);
-      return sum / monthRates.length;
-    });
-  };
-
-  const currentSeries = createYearMonthlySeries(currentYear);
-  const previousSeries = createYearMonthlySeries(previousYear);
-  const allRates = [...currentSeries, ...previousSeries].filter((value) => Number.isFinite(value));
-  if (!allRates.length) return;
-
-  const min = Math.min(...allRates);
-  const max = Math.max(...allRates);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
   const padding = 22 * ratio;
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
 
-  const scaleX = chartWidth / 11;
+  const scaleX = chartWidth / Math.max(points.length - 1, 1);
   const scaleY = chartHeight / (max - min || 1);
 
   const gridSteps = 6;
@@ -1326,19 +1166,19 @@ function drawFxChart() {
     ctx.stroke();
   }
 
-  const drawSeries = (series, strokeStyle, dashed = false) => {
-    ctx.strokeStyle = strokeStyle;
+  const drawSeries = (series) => {
+    ctx.strokeStyle = colors.line;
     ctx.lineWidth = 2 * ratio;
-    ctx.setLineDash(dashed ? [5 * ratio, 5 * ratio] : []);
+    ctx.setLineDash([]);
     ctx.beginPath();
     let started = false;
-    series.forEach((rate, index) => {
-      if (!Number.isFinite(rate)) {
+    series.forEach((point, index) => {
+      if (!Number.isFinite(point.rate)) {
         started = false;
         return;
       }
       const x = padding + index * scaleX;
-      const y = height - padding - (rate - min) * scaleY;
+      const y = height - padding - (point.rate - min) * scaleY;
       if (!started) {
         ctx.moveTo(x, y);
         started = true;
@@ -1347,24 +1187,15 @@ function drawFxChart() {
       }
     });
     ctx.stroke();
-    ctx.setLineDash([]);
   };
 
-  drawSeries(previousSeries, isLight ? "rgba(64, 110, 150, 0.55)" : "rgba(122, 166, 194, 0.45)", true);
-  drawSeries(currentSeries, colors.line, false);
-
-  fxChartEntries = monthShortNames.map((label, index) => ({
-    date: `${currentYear}-${String(index + 1).padStart(2, "0")}`,
-    label,
-    rate: currentSeries[index],
-    previousRate: previousSeries[index],
-  }));
+  drawSeries(points);
+  fxChartEntries = points;
 
   if (fxHoverIndex !== null && fxChartEntries[fxHoverIndex]) {
     const entry = fxChartEntries[fxHoverIndex];
     const x = padding + fxHoverIndex * scaleX;
     const currentRate = entry.rate;
-    const previousRate = entry.previousRate;
 
     ctx.strokeStyle = colors.hoverLine;
     ctx.lineWidth = 1 * ratio;
@@ -1373,13 +1204,6 @@ function drawFxChart() {
     ctx.lineTo(x, height - padding);
     ctx.stroke();
 
-    if (Number.isFinite(previousRate)) {
-      const prevY = height - padding - (previousRate - min) * scaleY;
-      ctx.fillStyle = isLight ? "#3f6b91" : "#8ba8bf";
-      ctx.beginPath();
-      ctx.arc(x, prevY, 3 * ratio, 0, Math.PI * 2);
-      ctx.fill();
-    }
     if (Number.isFinite(currentRate)) {
       const currentY = height - padding - (currentRate - min) * scaleY;
       ctx.fillStyle = colors.indicator;
@@ -1389,8 +1213,7 @@ function drawFxChart() {
     }
 
     const currentText = Number.isFinite(currentRate) ? currentRate.toFixed(4) : "n/d";
-    const previousText = Number.isFinite(previousRate) ? previousRate.toFixed(4) : "n/d";
-    const tooltipText = `${entry.label} · ${previousYear} ${previousText} · ${currentYear} ${currentText}`;
+    const tooltipText = `${entry.label} · ${entry.start} → ${entry.end} · ${currentText}`;
     ctx.font = `${11 * ratio}px "Droid Sans Mono", monospace`;
     const textWidth = ctx.measureText(tooltipText).width;
     const padX = 8 * ratio;
@@ -1400,7 +1223,7 @@ function drawFxChart() {
 
     let boxX = x - boxWidth / 2;
     boxX = Math.max(padding, Math.min(boxX, width - padding - boxWidth));
-    const anchorRate = Number.isFinite(currentRate) ? currentRate : previousRate;
+    const anchorRate = currentRate;
     const anchorY = Number.isFinite(anchorRate)
       ? height - padding - (anchorRate - min) * scaleY
       : height - padding;
@@ -1419,48 +1242,36 @@ function drawFxChart() {
     ctx.textBaseline = "middle";
     ctx.fillText(tooltipText, boxX + boxWidth / 2, boxY + boxHeight / 2 + 0.5 * ratio);
   }
+}
 
-  const currentValidRates = currentSeries.filter((value) => Number.isFinite(value));
-  const avg = currentValidRates.reduce((sum, value) => sum + value, 0) / Math.max(currentValidRates.length, 1);
-  const avgY = height - padding - (avg - min) * scaleY;
-  ctx.setLineDash([6 * ratio, 6 * ratio]);
-  ctx.strokeStyle = colors.avgLine;
-  ctx.lineWidth = 1.5 * ratio;
-  ctx.beginPath();
-  ctx.moveTo(padding, avgY);
-  ctx.lineTo(width - padding, avgY);
-  ctx.stroke();
-  ctx.setLineDash([]);
+function buildWeeklyFxSeries(entries, now = new Date()) {
+  const start = new Date(now);
+  start.setFullYear(now.getFullYear() - 1);
+  start.setHours(0, 0, 0, 0);
 
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - 6);
-  const monthStart = new Date(now);
-  monthStart.setMonth(now.getMonth() - 1);
-  const weekStartKey = formatDateLocal(weekStart);
-  const monthStartKey = formatDateLocal(monthStart);
-  const currentYearEntries = entries.filter((entry) => entry.date.startsWith(`${currentYear}-`));
-  const weekEntries = currentYearEntries.filter((entry) => entry.date >= weekStartKey);
-  const monthEntries = currentYearEntries.filter((entry) => entry.date >= monthStartKey);
-  const weekAvg =
-    weekEntries.reduce((sum, entry) => sum + entry.rate, 0) / Math.max(weekEntries.length, 1);
-  const monthAvg =
-    monthEntries.reduce((sum, entry) => sum + entry.rate, 0) /
-    Math.max(monthEntries.length, 1);
-
-  ctx.fillStyle = "#9bb3a8";
-  ctx.font = `${11 * ratio}px "Droid Sans Mono", monospace`;
-  ctx.textAlign = "left";
-  ctx.fillText(min.toFixed(4), padding, height - padding + 14 * ratio);
-  ctx.textAlign = "right";
-  ctx.fillText(max.toFixed(4), width - padding, padding - 6 * ratio);
-
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillText(
-    `YoY ${previousYear}/${currentYear} · Medie: 7gg ${weekAvg.toFixed(4)} · 30gg ${monthAvg.toFixed(4)} · anno ${avg.toFixed(4)}`,
-    padding,
-    Math.max(2 * ratio, padding - 14 * ratio)
-  );
+  const points = [];
+  for (let weekIndex = 0; weekIndex < 52; weekIndex += 1) {
+    const weekStart = new Date(start);
+    weekStart.setDate(start.getDate() + weekIndex * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    if (weekEnd > now) {
+      weekEnd.setTime(now.getTime());
+    }
+    const startKey = formatDateLocal(weekStart);
+    const endKey = formatDateLocal(weekEnd);
+    const weekEntries = entries.filter((entry) => entry.date >= startKey && entry.date <= endKey);
+    const average = weekEntries.length
+      ? weekEntries.reduce((sum, entry) => sum + entry.rate, 0) / weekEntries.length
+      : null;
+    points.push({
+      label: `Settimana ${String(weekIndex + 1).padStart(2, "0")}`,
+      start: startKey,
+      end: endKey,
+      rate: average,
+    });
+  }
+  return points;
 }
 
 function setupFxChartTooltip() {
@@ -1500,76 +1311,6 @@ function setupFxChartTooltip() {
       drawFxChart();
     }
   });
-}
-
-// --- FX CHART (INTRADAY) ---
-function resizeFxMiniChart() {
-  if (!fxMiniChartEl) return;
-  const parent = fxMiniChartEl.parentElement;
-  if (!parent) return;
-  const targetWidth = Math.floor(parent.clientWidth);
-  const targetHeight = 46;
-  if (targetWidth === fxMiniSize.width && targetHeight === fxMiniSize.height) return;
-
-  const ratio = window.devicePixelRatio || 1;
-  fxMiniChartEl.width = targetWidth * ratio;
-  fxMiniChartEl.height = targetHeight * ratio;
-  fxMiniChartEl.style.width = `${targetWidth}px`;
-  fxMiniChartEl.style.height = `${targetHeight}px`;
-  fxMiniSize = { width: targetWidth, height: targetHeight };
-  drawFxMiniChart();
-}
-
-function drawFxMiniChart() {
-  if (!fxMiniChartEl) return;
-  const ctx = fxMiniChartEl.getContext("2d");
-  if (!ctx) return;
-
-  const cache = getIntradayCache();
-  const points = cache.points;
-  const ratio = window.devicePixelRatio || 1;
-  const width = fxMiniChartEl.width;
-  const height = fxMiniChartEl.height;
-  ctx.clearRect(0, 0, width, height);
-
-  if (!points.length) return;
-
-  const rates = points.map((p) => p.r);
-  const min = Math.min(...rates);
-  const max = Math.max(...rates);
-  const padding = 6 * ratio;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
-  const scaleX = chartWidth / Math.max(points.length - 1, 1);
-  const scaleY = chartHeight / (max - min || 1);
-
-  ctx.strokeStyle = "rgba(155, 179, 168, 0.6)";
-  ctx.lineWidth = 2 * ratio;
-  ctx.beginPath();
-  points.forEach((point, index) => {
-    const x = padding + index * scaleX;
-    const y = height - padding - (point.r - min) * scaleY;
-    if (index === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  });
-  ctx.stroke();
-}
-
-// --- FX SCHEDULING ---
-
-async function openExternalLink(url) {
-  if (!url || !/^https?:\/\//i.test(url)) {
-    throw new Error("URL non valido");
-  }
-
-  if (!window.Neutralino?.os?.open) {
-    throw new Error("API Neutralino os.open non disponibile");
-  }
-
-  await window.Neutralino.os.open(url);
 }
 
 // --- INIT / LISTENERS ---
@@ -1621,51 +1362,17 @@ function initDashboard() {
   updateClock();
   scheduleMinuteRefresh();
   ensureFxHistory();
-  fetchFxLatest();
-  scheduleFxLatestRefresh();
-  scheduleFxHistoryRefresh();
+  fetchFxLatest({ forceRemote: true });
+  if (new Date().getHours() === FX_DAILY_FETCH_HOURS[0]) {
+    runDailyFxRefresh();
+  }
+  scheduleFxDailyRefresh();
   resizeFxChart();
-  resizeFxMiniChart();
   setupFxChartTooltip();
 
   window.addEventListener("resize", () => {
     resizeFxChart();
-    resizeFxMiniChart();
   });
-
-  if (fxCardEl) {
-    fxCardEl.addEventListener("click", () => {
-      document.body.classList.toggle("show-trading");
-    });
-  }
-
-  const tradingPanel = document.getElementById("trading-panel");
-  if (tradingPanel) {
-    tradingPanel.addEventListener("click", (event) => {
-      event.stopPropagation();
-    });
-
-    const tradingLinks = tradingPanel.querySelectorAll("a[href]");
-    tradingLinks.forEach((link) => {
-      link.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        try {
-          await openExternalLink(link.href);
-        } catch (error) {
-          console.error("Errore apertura link esterno", error);
-          if (fxUpdatedEl) {
-            fxUpdatedEl.textContent = "Errore apertura link esterno";
-          }
-          if (fxChangeEl) {
-            fxChangeEl.textContent = "Controlla permessi Native API / browser predefinito";
-            fxChangeEl.classList.add("negative");
-          }
-          alert("Impossibile aprire il link esterno. Verifica browser predefinito e permessi Native API.");
-        }
-      });
-    });
-  }
 
   // --- Date Display & Format Menu ---
   const dateDisplayEl = document.getElementById("date-display");
@@ -1758,26 +1465,6 @@ function initDashboard() {
 
   // Tabs are now initialised in main.js via tabs.js module
 
-  if (fxKeyForm) {
-    fxKeyForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const value = fxKeyInput?.value?.trim();
-      if (!value) {
-        if (fxKeyStatus) fxKeyStatus.textContent = "Inserisci una chiave valida.";
-        return;
-      }
-      setFreeCurrencyCookieKey(value);
-      updateFxKeyStatus();
-    });
-  }
-
-  if (fxKeyClearBtn) {
-    fxKeyClearBtn.addEventListener("click", () => {
-      clearFreeCurrencyCookieKey();
-      updateFxKeyStatus();
-    });
-  }
-
   if (gistKeyForm) {
     gistKeyForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1819,16 +1506,9 @@ function initDashboard() {
     });
   }
 
-  setupRevealToggle(fxKeyToggleBtn, fxKeyInput);
   setupRevealToggle(gistKeyToggleBtn, gistKeyInput);
   setupRevealToggle(gistUrlToggleBtn, gistUrlInput);
 
-  setupCopyButton(
-    fxKeyCopyBtn,
-    () => getFreeCurrencyCookieKey() || fxKeyInput?.value,
-    fxKeyStatus,
-    "Chiave FX copiata."
-  );
   setupCopyButton(
     gistKeyCopyBtn,
     () => getGistCookieKey() || gistKeyInput?.value,
@@ -1842,7 +1522,6 @@ function initDashboard() {
     "URL Gist copiato."
   );
 
-  updateFxKeyStatus();
   updateGistKeyStatus();
   updateGistUrlStatus();
   updateNetworkStatus(getBestLocalFxSnapshot()?.ts || null);

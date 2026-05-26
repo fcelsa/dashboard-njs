@@ -66,22 +66,21 @@
             <div class="fx-title">
               <span>EUR/USD</span>
               <span class="fx-status" id="fx-status">•</span>
+              <span class="fx-weekly-range">
+                <span id="fx-weekly-min">Min --</span>
+                <span id="fx-weekly-max">Max --</span>
+              </span>
             </div>
             <div class="fx-price" id="fx-price">--</div>
-            <div class="fx-change" id="fx-change">--</div>
+            <div class="fx-averages">
+              <div class="fx-average-row"><span>Media 7g</span><span id="fx-avg-7">--</span></div>
+              <div class="fx-average-row"><span>Media 30g</span><span id="fx-avg-30">--</span></div>
+              <div class="fx-average-row"><span>Media YTD</span><span id="fx-avg-ytd">--</span></div>
+            </div>
             <div class="fx-updated" id="fx-updated">Aggiornamento: --</div>
           </div>
           <div class="fx-chart">
-            <canvas id="fx-chart" width="500" height="200" aria-label="Grafico EUR/USD anno su anno"></canvas>
-          </div>
-        </div>
-        <div class="trading-panel" id="trading-panel">
-          <div class="trading-links" role="list">
-            <a href="https://tradingeconomics.com/currencies" target="_blank" rel="noopener noreferrer">Trading
-              Economics valute</a>
-            <a href="https://freecurrencyapi.com/" target="_blank" rel="noopener noreferrer">freecurrencyapi</a>
-            <a href="https://www.google.com/finance/quote/EUR-USD?hl=it" target="_blank"
-              rel="noopener noreferrer">Google Finance</a>
+            <canvas id="fx-chart" width="500" height="200" aria-label="Grafico EUR/USD medie settimanali ultime 52 settimane"></canvas>
           </div>
         </div>
       </section>
@@ -94,16 +93,12 @@
               Online
             </div>
             <div class="status-meta" id="settings-meta" aria-live="polite">
-              <div class="settings-build">ver. 0.13.1</div>
+              <div class="settings-build">ver. 0.22.2</div>
             </div>
           </div>
         </div>
 
         <div class="status-indicators-grid">
-          <div class="sync-indicator" id="fx-api-status" title="Stato chiave FreeCurrencyAPI">
-            <span class="indicator-icon">💹</span>
-            <span class="indicator-text">FX API</span>
-          </div>
           <div class="sync-indicator" id="github-login-status" title="Stato connessione GitHub">
             <span class="indicator-icon">⊙</span>
             <span class="indicator-text">GitHub</span>
@@ -397,28 +392,10 @@
           <section class="tab-panel" data-tab-panel="settings">
             <div class="panel-header small">
               <h2>Impostazioni</h2>
-              <p class="hint">Preferenze dashboard e chiavi API</p>
+              <p class="hint">Preferenze dashboard e integrazione GitHub</p>
             </div>
             <div class="settings-content">
               <div class="settings-grid">
-                <div class="settings-group">
-                  <h3>FX API Key</h3>
-                  <form class="settings-form" id="fx-key-form" autocomplete="off">
-                    <label class="settings-label" for="freecurrency-key">FreeCurrencyAPI</label>
-                    <div class="settings-row compact-row">
-                      <input class="settings-input" id="freecurrency-key" name="freecurrency-key" type="password"
-                        placeholder="Incolla la API key" spellcheck="false" inputmode="text" />
-                      <button class="settings-btn icon" type="button" id="toggle-freecurrency-key"
-                        aria-label="Mostra o nascondi chiave FX" title="Mostra/Nascondi">👁</button>
-                      <button class="settings-btn icon" type="button" id="copy-freecurrency-key"
-                        aria-label="Copia chiave FX" title="Copia">⧉</button>
-                      <button class="settings-btn primary" type="submit">Salva</button>
-                      <button class="settings-btn" type="button" id="clear-freecurrency-key">Rimuovi</button>
-                    </div>
-                    <p class="settings-status" id="fx-key-status">Nessuna chiave salvata.</p>
-                  </form>
-                </div>
-
                 <div class="settings-group">
                   <h3>GitHub Token</h3>
                   <form class="settings-form" id="gist-key-form" autocomplete="off">
