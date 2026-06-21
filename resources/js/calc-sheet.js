@@ -25,6 +25,13 @@ function initCalcSheet() {
   let selectionAnchor = null;
   let selectionEnd = null;
   let isSelecting = false;
+  const EMPTY_CELL_ENTRY = Object.freeze({ raw: "", bold: false, color: "black" });
+  const DRAG_HOLD_DELAY = 320;
+  const DRAG_MOVE_TOLERANCE = 6;
+
+  let dragHoldTimer = null;
+  let dragPointerState = null;
+  let dragState = null;
 
   const contextMenu = document.createElement("div");
   contextMenu.className = "sheet-context-menu";
@@ -100,8 +107,30 @@ function initCalcSheet() {
     });
   }
 
-  document.addEventListener("mouseup", () => {
+  document.addEventListener("mouseup", (event) => {
     isSelecting = false;
+    finishCellDrag(event);
+    clearDragHold();
+  });
+
+  document.addEventListener("mousemove", (event) => {
+    if (dragState) {
+      updateDragTargetFromPoint(event.clientX, event.clientY, event.shiftKey);
+      return;
+    }
+
+    if (!dragPointerState) return;
+    const movedX = Math.abs(event.clientX - dragPointerState.startX);
+    const movedY = Math.abs(event.clientY - dragPointerState.startY);
+    if (movedX > DRAG_MOVE_TOLERANCE || movedY > DRAG_MOVE_TOLERANCE) {
+      clearDragHold();
+    }
+  });
+
+  window.addEventListener("blur", () => {
+    isSelecting = false;
+    clearDragHold();
+    clearCellDragState();
   });
 
   document.addEventListener("mousedown", (event) => {
@@ -128,8 +157,9 @@ function initCalcSheet() {
     cell.addEventListener("mousedown", (event) => {
       if (event.button !== 0) return;
       if (!cell.classList.contains("is-view")) return;
-      isSelecting = true;
       const cellId = cell.dataset.cell;
+      armCellDrag(cellId, event);
+      isSelecting = true;
       if (event.shiftKey && selectionAnchor) {
         selectionEnd = cellId;
       } else {
@@ -140,6 +170,7 @@ function initCalcSheet() {
     });
 
     cell.addEventListener("mouseover", () => {
+      if (dragState) return;
       if (!isSelecting) return;
       const cellId = cell.dataset.cell;
       selectionEnd = cellId;
@@ -148,6 +179,7 @@ function initCalcSheet() {
 
     cell.addEventListener("contextmenu", (event) => {
       event.preventDefault();
+      clearDragHold();
       const cellId = cell.dataset.cell;
       if (!isCellInSelection(cellId)) {
         selectionAnchor = cellId;
@@ -170,6 +202,7 @@ function initCalcSheet() {
       cell.classList.add("is-view");
       cell.textContent = formatDisplayValue(getRawValue(activeCellId));
       applyCellStyle(cell, getCellEntry(activeCellId));
+      cell.classList.toggle("is-draggable", isCellDraggable(activeCellId));
       updateToolbarState();
       updateFormulaBar(activeCellId);
     });
@@ -182,6 +215,7 @@ function initCalcSheet() {
       activeCellId = null;
       clearActiveCell();
       cell.classList.remove("is-view");
+      cell.classList.remove("is-draggable", "is-drag-pending");
       refreshAllCells();
     });
 
@@ -272,7 +306,9 @@ function initCalcSheet() {
   }
 
   function enterEditMode(cell, initialChar) {
+    clearDragHold();
     cell.classList.remove("is-view");
+    cell.classList.remove("is-draggable");
     cell.textContent = getRawValue(cell.dataset.cell);
     if (typeof initialChar === "string") {
       cell.textContent = initialChar;
@@ -319,6 +355,168 @@ function initCalcSheet() {
     if (nextCell) {
       nextCell.focus();
     }
+  }
+
+  function armCellDrag(cellId, event) {
+    clearDragHold();
+    if (!isCellDraggable(cellId)) return;
+
+    const sourceCell = cellElements.get(cellId);
+    dragPointerState = {
+      cellId,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+    sourceCell?.classList.add("is-drag-pending");
+
+    dragHoldTimer = setTimeout(() => {
+      beginCellDrag(cellId);
+    }, DRAG_HOLD_DELAY);
+  }
+
+  function clearDragHold() {
+    if (dragHoldTimer) {
+      clearTimeout(dragHoldTimer);
+      dragHoldTimer = null;
+    }
+
+    if (dragPointerState) {
+      const pendingCell = cellElements.get(dragPointerState.cellId);
+      pendingCell?.classList.remove("is-drag-pending");
+    }
+
+    dragPointerState = null;
+  }
+
+  function beginCellDrag(sourceCellId) {
+    const sourceCell = cellElements.get(sourceCellId);
+    if (!sourceCell || !isCellDraggable(sourceCellId)) {
+      clearDragHold();
+      return;
+    }
+
+    clearDragHold();
+    hideContextMenu();
+    isSelecting = false;
+    dragState = {
+      sourceCellId,
+      targetCellId: sourceCellId,
+      copyMode: false,
+    };
+
+    sheetRoot.classList.add("is-cell-dragging");
+    sourceCell.classList.add("is-drag-source");
+  }
+
+  function updateDragTargetFromPoint(clientX, clientY, copyMode) {
+    if (!dragState) return;
+    setDragCopyMode(copyMode);
+
+    const targetCell = getEditableCellFromPoint(clientX, clientY);
+    setDragTargetCell(targetCell?.dataset.cell ?? null);
+  }
+
+  function setDragCopyMode(copyMode) {
+    if (!dragState) return;
+
+    dragState.copyMode = copyMode;
+    sheetRoot.classList.toggle("is-copy-drag", copyMode);
+
+    const targetCell =
+      dragState.targetCellId && dragState.targetCellId !== dragState.sourceCellId
+        ? cellElements.get(dragState.targetCellId)
+        : null;
+    targetCell?.classList.toggle("is-copy-target", copyMode);
+  }
+
+  function setDragTargetCell(cellId) {
+    if (!dragState) return;
+
+    const previousTarget =
+      dragState.targetCellId && dragState.targetCellId !== dragState.sourceCellId
+        ? cellElements.get(dragState.targetCellId)
+        : null;
+    previousTarget?.classList.remove("is-drop-target", "is-copy-target");
+
+    dragState.targetCellId = cellId;
+
+    if (!cellId || cellId === dragState.sourceCellId) return;
+
+    const nextTarget = cellElements.get(cellId);
+    if (!nextTarget) return;
+    nextTarget.classList.add("is-drop-target");
+    nextTarget.classList.toggle("is-copy-target", dragState.copyMode);
+  }
+
+  function finishCellDrag(event) {
+    if (!dragState) return;
+
+    updateDragTargetFromPoint(event.clientX, event.clientY, event.shiftKey);
+
+    const { sourceCellId, targetCellId } = dragState;
+    const shouldCopy = Boolean(event.shiftKey);
+
+    if (targetCellId && targetCellId !== sourceCellId) {
+      moveOrCopyCell(sourceCellId, targetCellId, shouldCopy);
+    }
+
+    clearCellDragState();
+  }
+
+  function clearCellDragState() {
+    if (!dragState) return;
+
+    const sourceCell = cellElements.get(dragState.sourceCellId);
+    const targetCell =
+      dragState.targetCellId && dragState.targetCellId !== dragState.sourceCellId
+        ? cellElements.get(dragState.targetCellId)
+        : null;
+
+    sourceCell?.classList.remove("is-drag-source");
+    targetCell?.classList.remove("is-drop-target", "is-copy-target");
+    sheetRoot.classList.remove("is-cell-dragging", "is-copy-drag");
+    dragState = null;
+  }
+
+  function getEditableCellFromPoint(clientX, clientY) {
+    const target = document.elementFromPoint(clientX, clientY);
+    const cell = target?.closest?.(".calc-sheet-cell[data-editable='true']");
+    if (!cell || !sheetRoot.contains(cell)) return null;
+    return cell;
+  }
+
+  function moveOrCopyCell(sourceCellId, targetCellId, shouldCopy) {
+    if (sourceCellId === targetCellId) return;
+    if (!isCellDraggable(sourceCellId)) return;
+
+    const sourcePosition = parseCellId(sourceCellId);
+    const targetPosition = parseCellId(targetCellId);
+    if (!sourcePosition || !targetPosition) return;
+
+    const sourceEntry = cloneCellEntry(getCellEntry(sourceCellId));
+    const deltaRow = targetPosition.row - sourcePosition.row;
+    const deltaCol = targetPosition.col - sourcePosition.col;
+    const targetEntry = translateCellEntry(sourceEntry, deltaRow, deltaCol);
+
+    setCellEntry(targetCellId, targetEntry);
+    if (!shouldCopy) {
+      setCellEntry(sourceCellId, createEmptyCellEntry());
+    }
+
+    activeCellId = targetCellId;
+    selectionAnchor = targetCellId;
+    selectionEnd = targetCellId;
+    refreshAllCells();
+
+    const targetCell = cellElements.get(targetCellId);
+    if (targetCell) {
+      setActiveCell(targetCell);
+      targetCell.focus();
+    }
+
+    applySelection();
+    updateToolbarState();
+    updateFormulaBar(targetCellId);
   }
 
   function getSelectionRange() {
@@ -495,12 +693,34 @@ function initCalcSheet() {
     setCellEntry(cellId, entry);
   }
 
+  function isCellDraggable(cellId) {
+    return getRawValue(cellId).trim().length > 0;
+  }
+
+  function createEmptyCellEntry() {
+    return { ...EMPTY_CELL_ENTRY };
+  }
+
+  function cloneCellEntry(entry) {
+    return {
+      raw: entry?.raw ?? "",
+      bold: Boolean(entry?.bold),
+      color: entry?.color || "black",
+    };
+  }
+
+  function translateCellEntry(entry, deltaRow, deltaCol) {
+    const nextEntry = cloneCellEntry(entry);
+    nextEntry.raw = translateFormula(nextEntry.raw, deltaRow, deltaCol);
+    return nextEntry;
+  }
+
   function getCellEntry(cellId) {
-    return cellData.get(cellId) ?? { raw: "", bold: false, color: "black" };
+    return cellData.get(cellId) ?? createEmptyCellEntry();
   }
 
   function setCellEntry(cellId, entry) {
-    cellData.set(cellId, entry);
+    cellData.set(cellId, cloneCellEntry(entry));
     scheduleSave();
   }
 
@@ -511,6 +731,7 @@ function initCalcSheet() {
       applyCellStyle(cell, entry);
       cell.classList.toggle("has-formula", entry.raw.startsWith("="));
       cell.classList.toggle("is-numeric", isNumericDisplay(entry.raw));
+      cell.classList.toggle("is-draggable", cell.classList.contains("is-view") && isCellDraggable(cell.dataset.cell));
       if (cell.dataset.cell === activeCellId && !cell.classList.contains("is-view")) return;
       cell.textContent = formatDisplayValue(entry.raw);
     });

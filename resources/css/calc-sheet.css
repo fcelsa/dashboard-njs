@@ -140,6 +140,14 @@
   caret-color: transparent;
 }
 
+.calc-sheet-cell[data-editable="true"].is-view.is-draggable {
+  cursor: grab;
+}
+
+.calc-sheet.is-cell-dragging .calc-sheet-cell[data-editable="true"].is-view.is-draggable {
+  cursor: grabbing;
+}
+
 .calc-sheet-cell[data-editable="true"]:focus {
   outline: 2px solid var(--sheet-cell-focus-outline, rgba(138, 110, 40, 0.6));
   outline-offset: -2px;
@@ -154,6 +162,26 @@
 .calc-sheet-cell.is-selected {
   background: var(--sheet-cell-selected-bg, #fff1c7);
   box-shadow: inset 0 0 0 1px var(--sheet-cell-selected-shadow, rgba(138, 110, 40, 0.35));
+}
+
+.calc-sheet-cell.is-drag-pending {
+  box-shadow: inset 0 0 0 2px var(--sheet-cell-drag-pending-shadow, rgba(138, 110, 40, 0.35));
+}
+
+.calc-sheet-cell.is-drag-source {
+  opacity: 0.7;
+  background: var(--sheet-cell-drag-source-bg, #f4df9d);
+  box-shadow: inset 0 0 0 2px var(--sheet-cell-drag-source-shadow, rgba(138, 110, 40, 0.45));
+}
+
+.calc-sheet-cell.is-drop-target {
+  background: var(--sheet-cell-drop-target-bg, #ffe8a3);
+  box-shadow: inset 0 0 0 2px var(--sheet-cell-drop-target-shadow, rgba(138, 110, 40, 0.5));
+}
+
+.calc-sheet-cell.is-copy-target {
+  background: var(--sheet-cell-copy-target-bg, #e1f3c2);
+  box-shadow: inset 0 0 0 2px var(--sheet-cell-copy-target-shadow, rgba(77, 123, 37, 0.45));
 }
 
 .calc-sheet-cell.has-formula {

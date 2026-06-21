@@ -1,7 +1,7 @@
 {
   "applicationId": "it.fcs.dashboardnjs",
   "applicationName": "dashboard-njs",
-  "version": "0.22.2",
+  "version": "0.25.7",
   "defaultMode": "window",
   "port": 59210,
   "enableServer": true,
@@ -34,7 +34,7 @@
     "resourcesPath": "/resources/",
     "clientLibrary": "/resources/js/neutralino.js",
     "distributionPath": "/dist/",
-    "binaryVersion": "6.7.0",
+    "binaryVersion": "6.8.0",
     "clientVersion": "6.7.0"
   }
 }
