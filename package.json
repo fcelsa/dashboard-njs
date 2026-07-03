@@ -6,10 +6,17 @@
   "scripts": {
     "version:sync": "node ./scripts/sync-version.mjs",
     "setup": "node ./scripts/setup-neutralino.mjs",
+    "neutralino:refresh": "node ./scripts/refresh-neutralino.mjs",
+    "neutralino:update": "node ./scripts/update-neutralino.mjs",
     "dev": "npm run version:sync && node ./scripts/run-dev-safe.mjs",
     "dev:raw": "npx @neutralinojs/neu run",
     "build": "npm run version:sync && node ./scripts/build-all.mjs",
-    "build:mac": "npm run version:sync && node ./scripts/build-macos-wrapper.mjs",
+    "build:all": "npm run build",
+    "build:release": "npm run version:sync && node ./scripts/build-release.mjs",
+    "build:macos": "npm run version:sync && node ./scripts/build-macos.mjs",
+    "build:mac": "npm run build:macos",
+    "build:linux": "npm run version:sync && node ./scripts/build-linux.mjs",
+    "build:windows": "npm run version:sync && node ./scripts/build-windows.mjs",
     "build:web": "npm run version:sync && node ./scripts/build-web.mjs"
   },
   "devDependencies": {
