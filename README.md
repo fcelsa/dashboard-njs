@@ -8,7 +8,7 @@ Cross-platform desktop app powered by Neutralinojs, with a separate static web b
 - fixed window size: `1560 x 1050`
 - non-resizable window
 - local in-process HTTP server on a fixed port
-- desktop builds via `neu build --release`, with resource embedding attempted and `resources.neu` preserved as runtime fallback
+- desktop builds via `neu build --release`, with `resources.neu` always generated for runtime loading
 
 ## Build Philosophy
 
@@ -147,8 +147,8 @@ Build only Windows artifacts:
 npm run build:windows
 ```
 
-All desktop builds use `neu build --release --embed-resources --clean`.
-Because the current Neutralino runtime on this project still reports an `embed-resources` sentinel error, the scripts intentionally preserve `resources.neu` as the effective runtime resource archive.
+macOS and Linux builds use `neu build --release --embed-resources --clean`.
+Windows builds intentionally use `neu build --release --clean` (without embed) so Neutralino can patch the executable correctly and load the project resources from `resources.neu`.
 On macOS, the build script wraps the generated executable into a real `.app`, copies `dashboard-njs.icns` into `Contents/Resources/`, and copies `resources.neu` into `Contents/MacOS/`.
 On Linux, the build script copies `assets/icon/dashboard-njs.png` and creates the `.desktop` launcher.
 

@@ -22,6 +22,7 @@ const rootDir = path.resolve(__dirname, '..');
 const nodeBinDir = path.dirname(process.execPath);
 const npmCliPath = path.join(nodeBinDir, 'node_modules', 'npm', 'bin', 'npm-cli.js');
 const distRoot = path.join(rootDir, 'dist', 'dashboard-njs');
+const binStashRoot = path.join(rootDir, '.bin-stash');
 const packageJsonPath = path.join(rootDir, 'package.json');
 const neutralinoConfigPath = path.join(rootDir, 'neutralino.config.json');
 const buildConfigPath = path.join(rootDir, '.tmp', 'neutralino.build.config.json');
@@ -217,7 +218,7 @@ function ensureRequiredOutputs(target) {
 
 function withTargetBinaries(target, callback) {
   const keepNames = new Set([...(TARGET_BINARIES[target] || []), '.tmp', 'neutralinojs.log']);
-  const stashDir = path.join(rootDir, '.tmp', `bin-${target}-${Date.now()}`);
+  const stashDir = path.join(binStashRoot, `bin-${target}-${Date.now()}`);
 
   mkdirSync(stashDir, { recursive: true });
 
@@ -266,7 +267,11 @@ function buildSingleTarget(target, options = {}) {
   }
 
   const configPath = createBuildConfig();
-  const buildArgs = ['build', '--release', '--embed-resources', '--clean'];
+  const buildArgs = ['build', '--release', '--clean'];
+
+  if (target !== 'windows') {
+    buildArgs.push('--embed-resources');
+  }
 
   if (shouldCreateMacBundle(target)) {
     buildArgs.push('--macos-bundle');
