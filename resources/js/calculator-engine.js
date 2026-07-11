@@ -427,7 +427,7 @@ class CalculatorEngine {
 
             const raw = this.addModeBuffer || "0";
             let intPart = "0";
-            let fracPart = "00";
+            let fracPart;
             if (raw.length <= 2) {
                 fracPart = raw.padStart(2, "0");
             } else {

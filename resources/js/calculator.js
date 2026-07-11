@@ -1,5 +1,7 @@
 import { CalculatorEngine } from './calculator-engine.js';
 import { getCookie, setCookie } from './utils/cookies.js';
+import { getGistToken, getGistUrl } from './utils/token-store.js';
+import { verifyToken } from './utils/github-gist-api.js';
 import {
   initCalcHistoryDB,
   saveCurrentState,
@@ -145,31 +147,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         return hasCalculatorKeyboardFocus();
     };
 
-    const FOCUS_DEBUG = true;
-
-    const describeElement = (el) => {
-        if (!el) return 'null';
-        const id = el.id ? `#${el.id}` : '';
-        const className = typeof el.className === 'string' && el.className.trim()
-            ? `.${el.className.trim().split(/\s+/).join('.')}`
-            : '';
-        return `${el.tagName}${id}${className}`;
-    };
-
-    const logFocusDebug = (label, extra = {}) => {
-        if (!FOCUS_DEBUG || !window.__focusDebugEnabled) return;
-        const payload = {
-            tabActive: isCalculatorTabActive(),
-            calculatorFocused: hasCalculatorKeyboardFocus(),
-            activeElement: describeElement(document.activeElement),
-            ...extra
-        };
-        console.debug('[calculator-focus]', label, payload);
-        if (window.__focusDebugLog) {
-            window.__focusDebugLog('calculator-focus', label, payload);
-        }
-    };
-
     function syncCalculatorFocusLed() {
         if (!calculatorWrapper) return;
         const isOn = isCalculatorTabActive() && hasCalculatorKeyboardFocus();
@@ -178,17 +155,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function focusCalculatorWrapper() {
         if (!calculatorWrapper || !isCalculatorTabActive()) {
-            logFocusDebug('focusCalculatorWrapper:skip');
             return;
         }
-        logFocusDebug('focusCalculatorWrapper:before');
         try {
             calculatorWrapper.focus({ preventScroll: true });
         } catch {
             calculatorWrapper.focus();
         }
         syncCalculatorFocusLed();
-        logFocusDebug('focusCalculatorWrapper:after');
     }
 
     function focusCalculatorWrapperDeferred(delayMs = 0) {
@@ -217,11 +191,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (calculatorWrapper) {
         calculatorWrapper.addEventListener('focusin', () => {
             syncCalculatorFocusLed();
-            logFocusDebug('wrapper:focusin');
         });
         calculatorWrapper.addEventListener('focusout', () => {
             setTimeout(syncCalculatorFocusLed, 0);
-            logFocusDebug('wrapper:focusout');
         });
     }
 
@@ -232,49 +204,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     const tokenStatus = document.getElementById("token-status");
     const gistUrlIndicator = document.getElementById("gist-url-indicator");
     
-    const GIST_TOKEN_COOKIE_KEY = 'githubGistToken';
-    const GIST_URL_COOKIE_KEY = 'dashboardGistUrl';
-    
-    /**
-     * Get Gist token from cookies
-     */
-    function getGistTokenFromCookie() {
-      const token = getCookie(GIST_TOKEN_COOKIE_KEY);
-      return token ? token.trim() : null;
-    }
-    
-    /**
-     * Get Gist URL from cookies
-     */
-    function getGistUrlFromCookie() {
-      const url = getCookie(GIST_URL_COOKIE_KEY);
-      return url ? url.trim() : null;
-    }
-    
     /**
      * Update GitHub status indicators in Status Card
      * Shows GitHub auth status, token presence, and Gist URL status
      * @2026-02-08
      */
     function updateGitHubStatusIndicators() {
-        const hasToken = getGistTokenFromCookie() !== null;
-        const hasUrl = getGistUrlFromCookie() !== null;
+        const hasToken = getGistToken() !== null;
+        const hasUrl = getGistUrl() !== null;
         
         // Check GitHub authentication by attempting to verify token
         if (hasToken) {
-            fetch('https://api.github.com/user', {
-                headers: {
-                    'Authorization': `token ${getGistTokenFromCookie()}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            }).then(response => {
-                const isAuthenticated = response.ok;
+            verifyToken().then(isAuthenticated => {
                 if (githubLoginStatus) {
                     githubLoginStatus.classList.toggle('active', isAuthenticated);
-                }
-            }).catch(err => {
-                if (githubLoginStatus) {
-                    githubLoginStatus.classList.remove('active');
                 }
             });
         } else if (githubLoginStatus) {
@@ -299,8 +242,8 @@ document.addEventListener("DOMContentLoaded", async () => {
      * Update load/save button disabled state based on conditions
      */
     function updateSyncButtonStates() {
-        const hasToken = getGistTokenFromCookie() !== null;
-        const hasUrl = getGistUrlFromCookie() !== null;
+        const hasToken = getGistToken() !== null;
+        const hasUrl = getGistUrl() !== null;
         const canSync = hasToken && hasUrl;
         
         if (gistLoadBtn) gistLoadBtn.disabled = !canSync;
@@ -310,7 +253,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Event listener for Load button
     if (gistLoadBtn) {
         gistLoadBtn.addEventListener('click', async () => {
-            const gistUrl = getGistUrlFromCookie();
+            const gistUrl = getGistUrl();
             if (!gistUrl) {
                 alert('Configura l\'URL del Gist nelle Impostazioni');
                 return;
@@ -340,7 +283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Event listener for Save button
     if (gistSaveBtn) {
         gistSaveBtn.addEventListener('click', async () => {
-            const gistUrl = getGistUrlFromCookie();
+            const gistUrl = getGistUrl();
             if (!gistUrl) {
                 alert('Configura l\'URL del Gist nelle Impostazioni');
                 return;
@@ -825,7 +768,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const lead = entry.leadSymbol ? `${entry.leadSymbol} ` : "";
         const percentMarker = entry.percentSuffix ? '%' : '';
         
-        let symbolText = "";
+        let symbolText;
         if (isExpressionRow) {
             // Keep expression rows in the same 2-column tape layout using '='.
             // @2026-03-07
@@ -999,8 +942,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const n = Number(s.replace(',', '.'));
         if (Number.isNaN(n)) return s;
 
-        let formatted = s;
-        
+        let formatted;
+
         if (!displaySettings?.isFloat) {
             // Fixed decimal mode
             const dec = displaySettings?.decimals ?? 2;
@@ -1654,7 +1597,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                         await deleteUserSnapshot(snapshot.id);
                         item.remove();
                         if (list.children.length === 0) {
-                            content.innerHTML = "<p style='color: #999; text-align: center;'>Nessun calcolo salvato.</p>";
+                            content.innerHTML = "";
+                            const emptyMsg = document.createElement("p");
+                            emptyMsg.className = "calc-dialog-empty";
+                            emptyMsg.textContent = "Nessun calcolo salvato.";
+                            content.appendChild(emptyMsg);
                         }
                     } catch (err) {
                         alert(`Errore eliminazione: ${err.message}`);
@@ -1740,7 +1687,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.addEventListener('app:tab-changed', (event) => {
         const tabId = event?.detail?.tabId;
-        logFocusDebug('app:tab-changed', { tabId });
         if (tabId === 'calculator') {
             focusCalculatorWrapperDeferred(0);
             focusCalculatorWrapperDeferred(80);

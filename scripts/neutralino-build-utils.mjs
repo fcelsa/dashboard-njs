@@ -15,6 +15,7 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { syncVersion } from './sync-version.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,13 +23,20 @@ const rootDir = path.resolve(__dirname, '..');
 const nodeBinDir = path.dirname(process.execPath);
 const npmCliPath = path.join(nodeBinDir, 'node_modules', 'npm', 'bin', 'npm-cli.js');
 const distRoot = path.join(rootDir, 'dist', 'dashboard-njs');
-const binStashRoot = path.join(rootDir, '.bin-stash');
+// Keep build staging OUTSIDE the project tree: `neu build` sweeps project
+// folders (verified with .tmp/) into resources.neu, bloating every bundle. @2026-07-09
+const buildStagingRoot = path.join(os.tmpdir(), 'dashboard-njs-build');
+const binStashRoot = path.join(buildStagingRoot, 'bin-stash');
 const packageJsonPath = path.join(rootDir, 'package.json');
 const neutralinoConfigPath = path.join(rootDir, 'neutralino.config.json');
 const buildConfigPath = path.join(rootDir, '.tmp', 'neutralino.build.config.json');
 const binDir = path.join(rootDir, 'bin');
-const buildAllTargets = ['macos', 'windows', 'linux'];
-const macosBuildTargets = ['macos-arm64', 'macos-x64'];
+// Group targets expand to single packaging passes; 'macos' needs one pass
+// per architecture to produce both .app bundles. @2026-07-09
+const BUILD_GROUPS = {
+  all: ['macos-arm64', 'macos-x64', 'windows', 'linux'],
+  macos: ['macos-arm64', 'macos-x64']
+};
 const appPngIconAsset = 'dashboard-njs.png';
 const appIcnsIconAsset = 'dashboard-njs.icns';
 const defaultReleaseOutputs = [
@@ -120,7 +128,7 @@ function parseRequiredOutputs(value) {
     .filter(Boolean);
 }
 
-function getRequiredOutputs(target) {
+function getRequiredOutputs(target, strict = false) {
   const scopedEnvName = target === 'all'
     ? 'BUILD_REQUIRED_OUTPUTS_ALL'
     : `BUILD_REQUIRED_OUTPUTS_${target.toUpperCase()}`;
@@ -133,7 +141,7 @@ function getRequiredOutputs(target) {
     return parseRequiredOutputs(process.env.BUILD_REQUIRED_OUTPUTS);
   }
 
-  if (isEnabledEnvValue(process.env.CI) && target === 'all') {
+  if ((strict || isEnabledEnvValue(process.env.CI)) && target === 'all') {
     return [...defaultReleaseOutputs];
   }
 
@@ -199,8 +207,8 @@ function ensureArtifactsPresent(target) {
   }
 }
 
-function ensureRequiredOutputs(target) {
-  const requiredOutputs = getRequiredOutputs(target);
+function ensureRequiredOutputs(target, strict = false) {
+  const requiredOutputs = getRequiredOutputs(target, strict);
 
   if (requiredOutputs.length === 0) {
     return;
@@ -216,10 +224,46 @@ function ensureRequiredOutputs(target) {
   }
 }
 
+// The staging dir may live on a different filesystem than the project
+// (os.tmpdir() vs external volume), where rename fails with EXDEV. @2026-07-09
+function moveEntry(fromPath, toPath) {
+  try {
+    renameSync(fromPath, toPath);
+  } catch (error) {
+    if (error.code !== 'EXDEV') {
+      throw error;
+    }
+    cpSync(fromPath, toPath, { recursive: true, force: true });
+    rmSync(fromPath, { recursive: true, force: true });
+  }
+}
+
+// Put back any binaries a previous interrupted build left in the stash,
+// so a crash never strands framework binaries outside bin/. @2026-07-09
+function recoverStashedBinaries() {
+  if (!existsSync(binStashRoot)) {
+    return;
+  }
+
+  for (const dirEntry of readdirSync(binStashRoot, { withFileTypes: true })) {
+    if (!dirEntry.isDirectory()) {
+      continue;
+    }
+
+    const stashDir = path.join(binStashRoot, dirEntry.name);
+    for (const entry of readdirSync(stashDir, { withFileTypes: true })) {
+      moveEntry(path.join(stashDir, entry.name), path.join(binDir, entry.name));
+    }
+
+    rmSync(stashDir, { recursive: true, force: true });
+  }
+}
+
 function withTargetBinaries(target, callback) {
   const keepNames = new Set([...(TARGET_BINARIES[target] || []), '.tmp', 'neutralinojs.log']);
-  const stashDir = path.join(binStashRoot, `bin-${target}-${Date.now()}`);
+  const stashDir = path.join(binStashRoot, target);
 
+  recoverStashedBinaries();
   mkdirSync(stashDir, { recursive: true });
 
   for (const entry of readdirSync(binDir, { withFileTypes: true })) {
@@ -227,14 +271,14 @@ function withTargetBinaries(target, callback) {
       continue;
     }
 
-    renameSync(path.join(binDir, entry.name), path.join(stashDir, entry.name));
+    moveEntry(path.join(binDir, entry.name), path.join(stashDir, entry.name));
   }
 
   try {
     callback();
   } finally {
     for (const entry of readdirSync(stashDir, { withFileTypes: true })) {
-      renameSync(path.join(stashDir, entry.name), path.join(binDir, entry.name));
+      moveEntry(path.join(stashDir, entry.name), path.join(binDir, entry.name));
     }
 
     rmSync(stashDir, { recursive: true, force: true });
@@ -295,19 +339,18 @@ function buildSingleTarget(target, options = {}) {
   console.log(`Output: ${distRoot}`);
 }
 
-function buildAllDesktopTargets() {
-  const collectedDistRoot = path.join(rootDir, '.tmp', 'dist-all', 'dashboard-njs');
+// Each single-target pass prunes dist/ to its own artifacts, so group builds
+// collect every pass into a temp folder and reassemble dist/ at the end. @2026-07-09
+function buildTargetGroup(groupName) {
+  const targets = BUILD_GROUPS[groupName];
+  const collectedRoot = path.join(buildStagingRoot, `dist-${groupName}`);
+  const collectedDistRoot = path.join(collectedRoot, 'dashboard-njs');
   let refreshRuntime = shouldRefreshBeforeBuild();
 
   rmSync(collectedDistRoot, { recursive: true, force: true });
 
-  for (const target of buildAllTargets) {
-    if (target === 'macos') {
-      buildMacosTargets({ refreshRuntime, verifyOutputs: false });
-    } else {
-      buildSingleTarget(target, { refreshRuntime });
-    }
-
+  for (const target of targets) {
+    buildSingleTarget(target, { refreshRuntime });
     refreshRuntime = false;
     copyDirectoryContents(distRoot, collectedDistRoot);
   }
@@ -315,37 +358,9 @@ function buildAllDesktopTargets() {
   rmSync(distRoot, { recursive: true, force: true });
   mkdirSync(distRoot, { recursive: true });
   copyDirectoryContents(collectedDistRoot, distRoot);
-  rmSync(path.join(rootDir, '.tmp', 'dist-all'), { recursive: true, force: true });
+  rmSync(collectedRoot, { recursive: true, force: true });
 
-  ensureRequiredOutputs('all');
-
-  console.log('Desktop build completed for target: all');
-  console.log(`Output: ${distRoot}`);
-}
-
-function buildMacosTargets(options = {}) {
-  const { refreshRuntime = true, verifyOutputs = true } = options;
-  const collectedDistRoot = path.join(rootDir, '.tmp', 'dist-macos', 'dashboard-njs');
-  let shouldRefresh = refreshRuntime;
-
-  rmSync(collectedDistRoot, { recursive: true, force: true });
-
-  for (const target of macosBuildTargets) {
-    buildSingleTarget(target, { refreshRuntime: shouldRefresh });
-    shouldRefresh = false;
-    copyDirectoryContents(distRoot, collectedDistRoot);
-  }
-
-  rmSync(distRoot, { recursive: true, force: true });
-  mkdirSync(distRoot, { recursive: true });
-  copyDirectoryContents(collectedDistRoot, distRoot);
-  rmSync(path.join(rootDir, '.tmp', 'dist-macos'), { recursive: true, force: true });
-
-  if (verifyOutputs) {
-    ensureRequiredOutputs('macos');
-  }
-
-  console.log('Desktop build completed for target: macos');
+  console.log(`Desktop build completed for target: ${groupName}`);
   console.log(`Output: ${distRoot}`);
 }
 
@@ -533,23 +548,60 @@ export function refreshNeutralinoFramework() {
   refreshNeutralinoRuntime(false);
 }
 
+function runGitCapture(args) {
+  const result = spawnSync('git', args, { cwd: rootDir, encoding: 'utf8' });
+  if (result.error || (result.status ?? 1) !== 0) {
+    return null;
+  }
+  return result.stdout;
+}
+
+// The web build ships from the pushed commit via CI, so binaries built from
+// an uncommitted or untagged tree can silently diverge from it. @2026-07-09
+function checkReleaseParity(version, strict) {
+  const status = runGitCapture(['status', '--porcelain']);
+  if (status === null) {
+    return;
+  }
+
+  const problems = [];
+  if (status.trim()) {
+    problems.push('working tree has uncommitted changes');
+  }
+
+  const tag = runGitCapture(['tag', '--list', `v${version}`]);
+  if (tag !== null && !tag.trim()) {
+    problems.push(`tag v${version} not found`);
+  }
+
+  if (problems.length === 0) {
+    return;
+  }
+
+  const message = `version parity check: ${problems.join('; ')}`;
+  if (strict) {
+    throw new Error(`${message}. Commit and tag v${version} before a release build.`);
+  }
+  console.warn(`[build] Warning: ${message}.`);
+}
+
 /**
  * Builds desktop artifacts for one target or for every supported target.
  * @2026-07-03
  */
-export function buildDesktopTarget(target) {
-  if (target === 'all') {
-    buildAllDesktopTargets();
-    return;
+export function buildDesktopTarget(target, options = {}) {
+  const { strict = false } = options;
+  const version = syncVersion();
+
+  checkReleaseParity(version, strict);
+
+  if (BUILD_GROUPS[target]) {
+    buildTargetGroup(target);
+  } else {
+    buildSingleTarget(target, { refreshRuntime: shouldRefreshBeforeBuild() });
   }
 
-  if (target === 'macos') {
-    buildMacosTargets({ refreshRuntime: shouldRefreshBeforeBuild(), verifyOutputs: true });
-    return;
-  }
-
-  buildSingleTarget(target, { refreshRuntime: shouldRefreshBeforeBuild() });
-  ensureRequiredOutputs(target);
+  ensureRequiredOutputs(target, strict);
 }
 
 export { rootDir, distRoot };

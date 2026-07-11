@@ -2,24 +2,30 @@
   "name": "dashboard-njs",
   "version": "0.25.7",
   "private": true,
+  "type": "module",
   "description": "Dashboard desktop multipiattaforma con Neutralinojs",
   "scripts": {
     "version:sync": "node ./scripts/sync-version.mjs",
-    "setup": "node ./scripts/setup-neutralino.mjs",
-    "neutralino:refresh": "node ./scripts/refresh-neutralino.mjs",
-    "neutralino:update": "node ./scripts/update-neutralino.mjs",
-    "dev": "npm run version:sync && node ./scripts/run-dev-safe.mjs",
+    "test": "node --test \"tests/*.test.mjs\"",
+    "lint": "eslint .",
+    "setup": "node ./scripts/neutralino.mjs setup",
+    "neutralino:refresh": "node ./scripts/neutralino.mjs refresh",
+    "neutralino:update": "node ./scripts/neutralino.mjs update",
+    "dev": "node ./scripts/run-dev-safe.mjs",
     "dev:raw": "npx @neutralinojs/neu run",
-    "build": "npm run version:sync && node ./scripts/build-all.mjs",
+    "build": "node ./scripts/build.mjs all",
     "build:all": "npm run build",
-    "build:release": "npm run version:sync && node ./scripts/build-release.mjs",
-    "build:macos": "npm run version:sync && node ./scripts/build-macos.mjs",
+    "build:release": "node ./scripts/build.mjs all --strict",
+    "build:macos": "node ./scripts/build.mjs macos",
     "build:mac": "npm run build:macos",
-    "build:linux": "npm run version:sync && node ./scripts/build-linux.mjs",
-    "build:windows": "npm run version:sync && node ./scripts/build-windows.mjs",
-    "build:web": "npm run version:sync && node ./scripts/build-web.mjs"
+    "build:linux": "node ./scripts/build.mjs linux",
+    "build:windows": "node ./scripts/build.mjs windows",
+    "build:web": "node ./scripts/build-web.mjs"
   },
   "devDependencies": {
-    "@neutralinojs/neu": "^11.7.0"
+    "@eslint/js": "^10.0.1",
+    "@neutralinojs/neu": "^11.7.0",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0"
   }
 }

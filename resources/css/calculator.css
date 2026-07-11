@@ -1086,3 +1086,9 @@ button[data-key="+"]::after {
     font-size: 0.85em;
     margin-top: 8px;
 }
+
+/* Empty-state message inside dialog lists. @2026-07-09 */
+.calc-dialog-empty {
+    color: #999;
+    text-align: center;
+}

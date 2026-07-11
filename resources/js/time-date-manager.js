@@ -226,7 +226,7 @@ function setupHolidays() {
     });
 
     // 3. Add User Holidays (from localStorage or default 7 empty)
-    let userHolidays = [];
+    let userHolidays;
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       userHolidays = stored ? JSON.parse(stored) : [];
@@ -244,34 +244,54 @@ function setupHolidays() {
   renderTable();
 }
 
+// Build cells via DOM properties: names can come from user input or a synced
+// Gist, so interpolating them into innerHTML would allow markup injection. @2026-07-09
 function appendRow(parent, day, month, name, type) {
   const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td>${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}</td>
-    <td>${name}</td>
-    <td class="holiday-type">${type}</td>
-  `;
+
+  const dateTd = document.createElement('td');
+  dateTd.textContent = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
+
+  const nameTd = document.createElement('td');
+  nameTd.textContent = name;
+
+  const typeTd = document.createElement('td');
+  typeTd.className = 'holiday-type';
+  typeTd.textContent = type;
+
+  tr.append(dateTd, nameTd, typeTd);
   parent.appendChild(tr);
 }
 
 function appendUserRow(parent, day, month, name, index) {
   const tr = document.createElement('tr');
   tr.className = 'user-holiday-row';
-  tr.innerHTML = `
-    <td>
-      <input type="text" class="h-input-date" value="${day && month ? day+'/'+month : ''}" placeholder="GG/MM">
-    </td>
-    <td>
-      <input type="text" class="h-input-name" value="${name}" placeholder="Nome evento">
-    </td>
-    <td>
-      <button class="h-save-btn" data-index="${index}">Salva</button>
-    </td>
-  `;
 
-  const saveBtn = tr.querySelector('.h-save-btn');
+  const dateTd = document.createElement('td');
+  const dateInput = document.createElement('input');
+  dateInput.type = 'text';
+  dateInput.className = 'h-input-date';
+  dateInput.value = day && month ? `${day}/${month}` : '';
+  dateInput.placeholder = 'GG/MM';
+  dateTd.appendChild(dateInput);
+
+  const nameTd = document.createElement('td');
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'h-input-name';
+  nameInput.value = name;
+  nameInput.placeholder = 'Nome evento';
+  nameTd.appendChild(nameInput);
+
+  const actionTd = document.createElement('td');
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'h-save-btn';
+  saveBtn.dataset.index = String(index);
+  saveBtn.textContent = 'Salva';
   saveBtn.onclick = () => saveUserHoliday(tr, index);
+  actionTd.appendChild(saveBtn);
 
+  tr.append(dateTd, nameTd, actionTd);
   parent.appendChild(tr);
 }
 

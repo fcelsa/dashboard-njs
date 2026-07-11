@@ -6,6 +6,18 @@
   "port": 59210,
   "enableServer": true,
   "enableNativeAPI": true,
+  "nativeAllowList": [
+    "app.getConfig",
+    "app.exit",
+    "app.broadcast",
+    "computer.getOSInfo",
+    "computer.getArch",
+    "os.getPath",
+    "os.open",
+    "window.setMainMenu",
+    "events.*",
+    "debug.log"
+  ],
   "tokenSecurity": "one-time",
   "url": "/index.html",
   "documentRoot": "/resources/",

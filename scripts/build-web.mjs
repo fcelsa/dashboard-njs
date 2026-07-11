@@ -9,6 +9,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { syncVersion } from './sync-version.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,9 @@ const rootDir = path.resolve(__dirname, '..');
 const resourcesDir = path.join(rootDir, 'resources');
 const outDir = path.join(rootDir, 'dist-web');
 const outIndexPath = path.join(outDir, 'index.html');
+
+// Desktop-only files that make no sense on GitHub Pages. @2026-07-09
+const excludedWebFiles = new Set(['js/neutralino.js', 'js/neutralino.d.ts']);
 
 function resolveBasePath() {
   const envBasePath = process.env.BASE_PATH || process.env.PAGES_BASE_PATH;
@@ -60,11 +64,16 @@ if (!existsSync(resourcesDir)) {
   process.exit(1);
 }
 
+syncVersion();
+
 const basePath = resolveBasePath();
 
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
-cpSync(resourcesDir, outDir, { recursive: true });
+cpSync(resourcesDir, outDir, {
+  recursive: true,
+  filter: (src) => !excludedWebFiles.has(path.relative(resourcesDir, src)),
+});
 
 const originalIndex = readFileSync(outIndexPath, 'utf8');
 const patchedIndex = injectBaseTag(stripNeutralinoScript(originalIndex), basePath);

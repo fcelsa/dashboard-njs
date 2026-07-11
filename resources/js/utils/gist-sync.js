@@ -3,18 +3,23 @@
  * Syncs user-saved calculations to GitHub Gist
  */
 
-import { getCookie } from './cookies.js';
+import { getGistToken } from './token-store.js';
+import { listGists, createGist, updateGist, fetchGist } from './github-gist-api.js';
 
-const GIST_TOKEN_COOKIE_KEY = 'githubGistToken';
 const GIST_DATA_FILENAME = 'calculator-saves.json';
-const GITHUB_API = 'https://api.github.com';
+const GIST_DESCRIPTION = 'Calculator Snapshots';
 
-/**
- * Get GitHub Gist token from cookies
- */
-function getGistToken() {
-  const key = getCookie(GIST_TOKEN_COOKIE_KEY);
-  return key ? key.trim() : null;
+function buildGistFiles(snapshots) {
+  return {
+    [GIST_DATA_FILENAME]: {
+      content: JSON.stringify({
+        version: 1,
+        snapshots,
+        syncedAt: Date.now(),
+        syncedFrom: 'calculator-app'
+      }, null, 2)
+    }
+  };
 }
 
 /**
@@ -22,29 +27,11 @@ function getGistToken() {
  * @returns {string|null} - Gist ID if found, null otherwise
  */
 export async function findCalculatorGist() {
-  const token = getGistToken();
-  if (!token) return null;
+  const gists = await listGists();
+  if (!gists) return null;
 
-  try {
-    const response = await fetch(`${GITHUB_API}/user/gists?per_page=100`, {
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-
-    if (!response.ok) {
-      console.error('Error fetching gists:', response.status);
-      return null;
-    }
-
-    const gists = await response.json();
-    const calcGist = gists.find(g => g.description === 'Calculator Snapshots');
-    return calcGist ? calcGist.id : null;
-  } catch (err) {
-    console.error('Error finding calculator gist:', err);
-    return null;
-  }
+  const calcGist = gists.find(g => g.description === GIST_DESCRIPTION);
+  return calcGist ? calcGist.id : null;
 }
 
 /**
@@ -53,44 +40,7 @@ export async function findCalculatorGist() {
  * @returns {string|null} - Gist ID if created, null on error
  */
 export async function createCalculatorGist(snapshots) {
-  const token = getGistToken();
-  if (!token) return null;
-
-  try {
-    const response = await fetch(`${GITHUB_API}/gists`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        description: 'Calculator Snapshots',
-        public: false,
-        files: {
-          [GIST_DATA_FILENAME]: {
-            content: JSON.stringify({
-              version: 1,
-              snapshots,
-              syncedAt: Date.now(),
-              syncedFrom: 'calculator-app'
-            }, null, 2)
-          }
-        }
-      })
-    });
-
-    if (!response.ok) {
-      console.error('Error creating gist:', response.status);
-      return null;
-    }
-
-    const gist = await response.json();
-    return gist.id;
-  } catch (err) {
-    console.error('Error creating calculator gist:', err);
-    return null;
-  }
+  return createGist(GIST_DESCRIPTION, buildGistFiles(snapshots));
 }
 
 /**
@@ -99,42 +49,10 @@ export async function createCalculatorGist(snapshots) {
  * @param {Array} snapshots - Array of user snapshots
  */
 export async function updateCalculatorGist(gistId, snapshots) {
-  const token = getGistToken();
-  if (!token) return false;
-
-  try {
-    const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        description: 'Calculator Snapshots',
-        files: {
-          [GIST_DATA_FILENAME]: {
-            content: JSON.stringify({
-              version: 1,
-              snapshots,
-              syncedAt: Date.now(),
-              syncedFrom: 'calculator-app'
-            }, null, 2)
-          }
-        }
-      })
-    });
-
-    if (!response.ok) {
-      console.error('Error updating gist:', response.status);
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    console.error('Error updating calculator gist:', err);
-    return false;
-  }
+  return updateGist(gistId, {
+    description: GIST_DESCRIPTION,
+    files: buildGistFiles(snapshots)
+  });
 }
 
 /**
@@ -143,30 +61,17 @@ export async function updateCalculatorGist(gistId, snapshots) {
  * @returns {Array|null} - Array of snapshots or null on error
  */
 export async function downloadCalculatorGist(gistId) {
-  const token = getGistToken();
-  if (!token) return null;
+  const gist = await fetchGist(gistId);
+  if (!gist) return null;
+
+  const fileContent = gist.files[GIST_DATA_FILENAME];
+  if (!fileContent) return null;
 
   try {
-    const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-
-    if (!response.ok) {
-      console.error('Error downloading gist:', response.status);
-      return null;
-    }
-
-    const gist = await response.json();
-    const fileContent = gist.files[GIST_DATA_FILENAME];
-    if (!fileContent) return null;
-
     const data = JSON.parse(fileContent.content);
     return data.snapshots || [];
   } catch (err) {
-    console.error('Error downloading calculator gist:', err);
+    console.error('Error parsing calculator gist:', err);
     return null;
   }
 }
@@ -314,7 +219,7 @@ export async function syncFromGist(localSnapshots) {
 /**
  * Check if a snapshot is newer on remote or local
  * @param {Object} local - Local snapshot
- * @param {Object} remote - Remote snapshot  
+ * @param {Object} remote - Remote snapshot
  * @returns {string} - 'local', 'remote', or 'same'
  */
 export function compareSnapshots(local, remote) {

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import net from 'node:net';
 import { spawn } from 'node:child_process';
+import { syncVersion } from './sync-version.mjs';
 
 const rootDir = process.cwd();
 const configPath = path.join(rootDir, 'neutralino.config.json');
@@ -142,6 +143,13 @@ async function showWarningWindow(message) {
 }
 
 async function main() {
+  try {
+    syncVersion();
+  } catch (error) {
+    console.error('[dev-safe] Version sync fallita:', error.message);
+    process.exit(1);
+  }
+
   let config;
   try {
     config = readConfig();

@@ -3,20 +3,13 @@
  * Manual sync: user provides Gist URL explicitly
  */
 
-import { getCookie } from './cookies.js';
+import { getGistToken } from './token-store.js';
+import { fetchGist, updateGist } from './github-gist-api.js';
 
-const GIST_TOKEN_COOKIE_KEY = 'githubGistToken';
 const GIST_DATA_FILENAME = 'dashboard-state.json';
-const GITHUB_API = 'https://api.github.com';
 const CALENDAR_HOLIDAYS_STORAGE_KEY = 'dashboard_user_holidays';
 
-/**
- * Get GitHub Gist token from cookies
- */
-export function getGistToken() {
-  const key = getCookie(GIST_TOKEN_COOKIE_KEY);
-  return key ? key.trim() : null;
-}
+export { getGistToken };
 
 /**
  * Extract Gist ID from Gist URL
@@ -367,156 +360,6 @@ export async function restoreDashboardState(data) {
 }
 
 /**
- * Find existing dashboard gist (searches GitHub, caches result)
- * Try cached ID first, fallback to search
- */
-export async function findDashboardGist() {
-  const token = getGistToken();
-  if (!token) return null;
-
-  // Try cached ID first
-  const cachedId = getCachedGistId();
-  if (cachedId) {
-    try {
-      const response = await fetch(`${GITHUB_API}/gists/${cachedId}`, {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      if (response.ok) {
-        return cachedId; // Cached ID is still valid
-      }
-      // Cached ID is invalid, clear it
-    } catch (err) {
-      console.warn('Cached gist ID no longer valid, searching...');
-    }
-  }
-
-  // Search for dashboard gist
-  try {
-    const response = await fetch(`${GITHUB_API}/user/gists?per_page=100`, {
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-
-    if (!response.ok) return null;
-
-    const gists = await response.json();
-    const dashboardGist = gists.find(g => g.description === GIST_DESCRIPTION);
-    if (dashboardGist) {
-      // Cache this ID for future use
-      setCachedGistId(dashboardGist.id);
-      return dashboardGist.id;
-    }
-    return null;
-  } catch (err) {
-    console.error('Error finding dashboard gist:', err);
-    return null;
-  }
-}
-
-/**
- * Create new dashboard gist
- */
-export async function createDashboardGist(state) {
-  const token = getGistToken();
-  if (!token) return null;
-
-  try {
-    const response = await fetch(`${GITHUB_API}/gists`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        description: GIST_DESCRIPTION,
-        public: false,
-        files: {
-          [GIST_DATA_FILENAME]: {
-            content: JSON.stringify(state, null, 2)
-          }
-        }
-      })
-    });
-
-    if (!response.ok) return null;
-
-    const gist = await response.json();
-    // Cache this new ID for future use
-    setCachedGistId(gist.id);
-    return gist.id;
-  } catch (err) {
-    console.error('Error creating dashboard gist:', err);
-    return null;
-  }
-}
-
-/**
- * Update existing dashboard gist
- */
-export async function updateDashboardGist(gistId, state) {
-  const token = getGistToken();
-  if (!token) return false;
-
-  try {
-    const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        description: GIST_DESCRIPTION,
-        files: {
-          [GIST_DATA_FILENAME]: {
-            content: JSON.stringify(state, null, 2)
-          }
-        }
-      })
-    });
-
-    return response.ok;
-  } catch (err) {
-    console.error('Error updating dashboard gist:', err);
-    return false;
-  }
-}
-
-/**
- * Download dashboard state from gist
- */
-export async function downloadDashboardGist(gistId) {
-  const token = getGistToken();
-  if (!token) return null;
-
-  try {
-    const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-
-    if (!response.ok) return null;
-
-    const gist = await response.json();
-    const fileContent = gist.files[GIST_DATA_FILENAME];
-    if (!fileContent) return null;
-
-    return JSON.parse(fileContent.content);
-  } catch (err) {
-    console.error('Error downloading dashboard gist:', err);
-    return null;
-  }
-}
-
-/**
  * Save dashboard state TO a specific Gist URL
  * @2026-02-08 Manual save with explicit Gist URL
  */
@@ -537,37 +380,25 @@ export async function saveToGistUrl(gistUrl, state) {
     };
   }
 
-  try {
-    const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        files: {
-          [GIST_DATA_FILENAME]: {
-            content: JSON.stringify(state, null, 2)
-          }
-        }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
+  const saved = await updateGist(gistId, {
+    files: {
+      [GIST_DATA_FILENAME]: {
+        content: JSON.stringify(state, null, 2)
+      }
     }
+  });
 
-    return {
-      success: true,
-      message: 'Stato salvato su Gist'
-    };
-  } catch (err) {
+  if (!saved) {
     return {
       success: false,
-      message: `Errore: ${err.message}`
+      message: 'Errore salvataggio su Gist'
     };
   }
+
+  return {
+    success: true,
+    message: 'Stato salvato su Gist'
+  };
 }
 
 /**
@@ -592,18 +423,11 @@ export async function loadFromGistUrl(gistUrl) {
   }
 
   try {
-    const response = await fetch(`${GITHUB_API}/gists/${gistId}`, {
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
+    const gist = await fetchGist(gistId);
+    if (!gist) {
+      throw new Error('Gist non raggiungibile');
     }
 
-    const gist = await response.json();
     const fileContent = gist.files[GIST_DATA_FILENAME];
     if (!fileContent || !fileContent.content) {
       throw new Error('dashboard-state.json non trovato nel Gist');
